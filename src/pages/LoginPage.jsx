@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import supportUpLogo from '../assets/support-up-logo.png'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import { ROUTES } from '../constants/routes'
@@ -27,8 +28,8 @@ function LoginPage() {
     <main className="login-page">
       <section className="login-intro">
         <Link className="brand brand--light" to={ROUTES.LOGIN}>
-          <span className="brand__mark" aria-hidden="true">✓</span>
-          지원체크 <strong>AI</strong>
+          <img className="brand__logo" src={supportUpLogo} alt="" />
+          지원UP
         </Link>
         <div className="login-intro__copy">
           <span className="eyebrow eyebrow--light">1인 소상공인을 위한 AI 신청 도우미</span>
@@ -66,6 +67,11 @@ function LoginPage() {
             {error && <p className="form-error" role="alert">{error}</p>}
           </div>
           <Button type="submit" size="large">로그인</Button>
+          <nav className="login-card__recovery" aria-label="계정 찾기">
+            <Link to={ROUTES.FIND_ID}>아이디 찾기</Link>
+            <span aria-hidden="true">|</span>
+            <Link to={ROUTES.FORGOT_PASSWORD}>비밀번호 찾기</Link>
+          </nav>
           <p className="login-card__signup">아직 계정이 없나요? <Link to={ROUTES.SIGNUP}>회원가입</Link></p>
           <small>로그인 후 맞춤 공고 탐색, AI 검수, 저장 기록을 이용할 수 있어요.</small>
         </form>

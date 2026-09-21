@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import supportUpLogo from '../assets/support-up-logo.png'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import SignupStepCard from '../components/signup/SignupStepCard'
 import { ROUTES } from '../constants/routes'
 import { useAuth } from '../hooks/useAuth'
+import { getPasswordValidationError } from '../utils/authUtils'
 import { formatCurrency } from '../utils/formatUtils'
 
 const initialForm = {
@@ -50,7 +52,10 @@ function SignupPage() {
     const requiredByStep = ['email', 'password', 'name', 'phone', null, 'region', 'industry', 'openingDate', 'businessType', 'employeeCount', 'annualRevenue']
     const field = requiredByStep[step]
     if (field && form[field] === '') return '필수 정보를 입력해주세요.'
-    if (step === 1 && form.password.length < 8) return '비밀번호는 8자 이상 입력해주세요.'
+    if (step === 1) {
+      const passwordError = getPasswordValidationError(form.password)
+      if (passwordError) return passwordError
+    }
     if (step === 1 && form.password !== form.passwordConfirm) return '비밀번호가 일치하지 않습니다.'
     return ''
   }
@@ -101,7 +106,7 @@ function SignupPage() {
   if (step === 4) {
     return (
       <main className="signup-page">
-        <Link className="brand signup-brand" to={ROUTES.LOGIN}><span className="brand__mark">✓</span>지원체크 <strong>AI</strong></Link>
+        <Link className="brand signup-brand" to={ROUTES.LOGIN}><img className="brand__logo" src={supportUpLogo} alt="" />지원UP</Link>
         <SignupStepCard title={stepCopy[step][0]} description={stepCopy[step][1]}>
           <div className="signup-complete-icon" aria-hidden="true">✓</div>
           <div className="signup-actions signup-actions--stacked">
@@ -122,7 +127,7 @@ function SignupPage() {
     ]
     return (
       <main className="signup-page">
-        <Link className="brand signup-brand" to={ROUTES.LOGIN}><span className="brand__mark">✓</span>지원체크 <strong>AI</strong></Link>
+        <Link className="brand signup-brand" to={ROUTES.LOGIN}><img className="brand__logo" src={supportUpLogo} alt="" />지원UP</Link>
         <SignupStepCard title={stepCopy[step][0]} description={stepCopy[step][1]}>
           <dl className="signup-summary">{summary.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
           <div className="signup-actions"><Button variant="secondary" onClick={() => setStep(10)}>수정하기</Button><Button onClick={() => finishSignup(true)}>가입 완료하고 시작하기</Button></div>
@@ -133,7 +138,7 @@ function SignupPage() {
 
   return (
     <main className="signup-page">
-      <Link className="brand signup-brand" to={ROUTES.LOGIN}><span className="brand__mark">✓</span>지원체크 <strong>AI</strong></Link>
+      <Link className="brand signup-brand" to={ROUTES.LOGIN}><img className="brand__logo" src={supportUpLogo} alt="" />지원UP</Link>
       <SignupStepCard current={progressStep} total={10} title={stepCopy[step][0]} description={stepCopy[step][1]}>
         <div className="signup-card__body">{renderField()}{error && <p className="form-error" role="alert">{error}</p>}</div>
         <div className="signup-actions">

@@ -14,6 +14,9 @@
 .login-card > p { color: var(--color-text-muted); }
 .login-card__fields { display: grid; gap: 18px; margin: 34px 0 22px; }
 .login-card > .button { width: 100%; }
+.login-card__recovery { display: flex; justify-content: center; gap: 12px; margin-top: 18px; color: var(--color-text-muted); font-size: 0.86rem; font-weight: 700; }
+.login-card__recovery a:hover { color: var(--color-primary); }
+.login-card__recovery span { color: var(--color-border-strong); }
 .login-card__signup { margin-top: 24px !important; text-align: center; font-size: 0.9rem; }
 .login-card__signup a { margin-left: 8px; color: var(--color-primary); font-weight: 800; }
 .login-card > small { display: block; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--color-border); color: var(--color-text-muted); text-align: center; }
@@ -51,6 +54,40 @@
 .signup-summary dt { color: var(--color-text-muted); }
 .signup-summary dd { font-weight: 750; text-align: right; }
 
+.auth-page { min-height: 100vh; padding: 48px 24px; background: radial-gradient(circle at 50% 18%, #fff 0, var(--color-background) 52%); }
+.auth-page__shell { width: min(540px, 100%); margin: 0 auto; }
+.auth-brand { margin-bottom: 48px; }
+.auth-page .back-link { margin-bottom: 16px; }
+.auth-card { padding: 36px; box-shadow: var(--shadow-card); }
+.auth-card h1 { margin: 8px 0 10px; font-size: 1.9rem; }
+.auth-card__description { color: var(--color-text-muted); }
+.auth-card form > .button { width: 100%; }
+.auth-fields { display: grid; gap: 18px; margin: 28px 0 22px; }
+.auth-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 28px; }
+.auth-actions--stacked { grid-template-columns: 1fr; }
+.auth-result { display: grid; justify-items: center; text-align: center; }
+.auth-result__icon { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 22px; border-radius: 50%; color: var(--color-success); background: var(--color-success-soft); font-size: 1.8rem; font-weight: 900; }
+.auth-result h1 { margin: 10px 0 12px; }
+.auth-result > p { color: var(--color-text-muted); }
+.auth-result > .button { width: 100%; margin-top: 28px; }
+.masked-id { display: block; width: 100%; margin: 14px 0; padding: 16px; border-radius: 10px; color: var(--color-primary-dark); background: var(--color-primary-soft); font-size: 1.25rem; }
+.auth-progress { margin-bottom: 28px; color: var(--color-primary); font-size: 0.78rem; font-weight: 800; }
+.auth-progress > div { height: 6px; margin-top: 8px; overflow: hidden; border-radius: 999px; background: #dfe5ee; }
+.auth-progress__fill { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width 0.25s ease; }
+.auth-progress__fill--1 { width: 33.333%; }
+.auth-progress__fill--2 { width: 66.666%; }
+.auth-progress__fill--3 { width: 100%; }
+.verification-form { display: grid; gap: 18px; margin-top: 26px; }
+.verification-form > .button { width: 100%; }
+.auth-notice { padding: 12px 14px; border-radius: 9px; color: var(--color-success); background: var(--color-success-soft); font-size: 0.88rem; font-weight: 750; }
+.verification-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.timer { color: var(--color-primary); font-size: 0.86rem; font-weight: 800; }
+.timer--expired { color: var(--color-danger); }
+.verification-complete { display: grid; gap: 18px; }
+.verification-complete p { padding: 12px 14px; border-radius: 9px; color: var(--color-success); background: var(--color-success-soft); font-weight: 750; }
+.verification-complete .button { width: 100%; }
+.auth-card .error-state { margin: 22px 0; }
+
 @media (max-width: 900px) {
   .login-page { grid-template-columns: 1fr; }
   .login-intro { min-height: auto; padding: 36px 28px 44px; gap: 50px; }
@@ -62,4 +99,9 @@
   .login-card { padding: 30px 22px; }
   .signup-page { padding: 28px 14px; }
   .signup-card { margin-top: 40px; padding: 24px 20px; }
+  .auth-page { padding: 28px 14px; }
+  .auth-brand { margin-bottom: 36px; }
+  .auth-card { padding: 28px 20px; }
+  .auth-actions { grid-template-columns: 1fr; }
+  .verification-meta { align-items: stretch; flex-direction: column; }
 }

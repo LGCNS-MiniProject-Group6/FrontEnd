@@ -28,7 +28,7 @@
 .badge--danger { background: var(--color-danger-soft); color: var(--color-danger); }
 
 .brand { display: inline-flex; align-items: center; gap: 8px; color: var(--color-primary-dark); font-size: 1.25rem; font-weight: 850; letter-spacing: -0.03em; }
-.brand__mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; color: white; background: var(--color-primary); font-size: 0.9rem; }
+.brand__logo { display: block; width: 32px; height: 32px; border: 1px solid rgba(78, 61, 145, 0.28); border-radius: 9px; object-fit: cover; box-shadow: 0 2px 6px rgba(52, 42, 112, 0.12); }
 .brand--light { color: white; }
 
 .site-header { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid rgba(216, 224, 238, 0.9); background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); }

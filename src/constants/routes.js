@@ -1,6 +1,8 @@
 export const ROUTES = {
   LOGIN: '/login',
   SIGNUP: '/signup',
+  FIND_ID: '/find-id',
+  FORGOT_PASSWORD: '/forgot-password',
   HOME: '/home',
   PROGRAMS: '/programs',
   MY_PAGE: '/mypage',

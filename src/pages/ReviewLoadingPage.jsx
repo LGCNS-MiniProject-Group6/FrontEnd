@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import supportUpLogo from '../assets/support-up-logo.png'
 import Button from '../components/common/Button'
 import { reviewPath } from '../constants/routes'
 
@@ -18,7 +19,7 @@ function ReviewLoadingPage() {
 
   return (
     <main className="loading-page">
-      <div className="loading-brand"><span>✓</span> 지원체크 <strong>AI</strong></div>
+      <div className="loading-brand"><img src={supportUpLogo} alt="" /> 지원UP</div>
       <section className="review-loading-card">
         <span className="eyebrow">공고와 내 사업정보를 안전하게 비교하고 있어요</span>
         <h1>AI 신청 적합성 검수</h1>
