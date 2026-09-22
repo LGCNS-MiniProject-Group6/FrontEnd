@@ -5,7 +5,6 @@
 .home-hero__signal { display: inline-flex; align-items: center; gap: 9px; color: var(--color-primary); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.015em; }
 .home-hero__signal i { width: 7px; height: 7px; border-radius: 50%; background: #39a56c; box-shadow: 0 0 0 5px rgba(57,165,108,0.12); }
 .home-hero__content h1 { margin: 22px 0 24px; font-size: clamp(3.25rem, 5.2vw, 5.25rem); line-height: 1.04; letter-spacing: -0.075em; }
-.home-hero__content h1 > span { white-space: nowrap; }
 .home-hero__content h1 em { color: var(--color-primary); font-style: normal; }
 .home-hero__content > p { max-width: 600px; color: var(--color-text-muted); font-size: clamp(1rem, 1.3vw, 1.13rem); line-height: 1.85; }
 .home-hero__actions { display: flex; align-items: center; gap: 26px; margin-top: 34px; }
