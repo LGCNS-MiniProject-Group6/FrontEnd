@@ -10,6 +10,7 @@ const suggestedQuestions = [
   '자부담이 있나요?',
 ]
 
+// 현재 챗봇 답변은 화면 확인용 임시 응답입니다.
 const getMockAnswer = (question) => {
   if (question.includes('서류')) {
     return '현재 공고 기준으로 사업자등록증, 매출 증빙자료, 지원 신청서를 먼저 준비해주세요. 세부 제출 형식은 원문 공고에서 확인해야 합니다.'

@@ -109,6 +109,7 @@ function HomePage() {
           <div><p>등록한 사업정보를 기준으로 관련성이 높은 공고부터 골랐어요.</p><Link to={ROUTES.PROGRAMS}>전체 공고 보기 →</Link></div>
         </Reveal>
         <div className="program-grid program-grid--home">
+          {/* 현재 추천 공고는 화면 확인용 Mock 데이터입니다. */}
           {programMocks.slice(0, 3).map((program, index) => (
             <Reveal variant="up" delay={index} key={program.pblancId}>
               <ProgramCard program={program} featured />

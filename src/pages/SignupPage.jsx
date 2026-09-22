@@ -71,6 +71,7 @@ function SignupPage() {
   }
 
   const finishSignup = (includeBusiness = true) => {
+    // 현재는 실제 회원가입 API 대신 Mock 사용자 정보를 저장합니다.
     completeSignup({
       name: form.name || '박운영',
       email: form.email,

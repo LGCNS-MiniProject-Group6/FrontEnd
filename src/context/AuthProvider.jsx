@@ -5,6 +5,7 @@ import { AuthContext } from './authContext'
 const STORAGE_KEY = 'support-check-auth'
 
 export function AuthProvider({ children }) {
+  // 새로고침 후에도 화면의 임시 로그인 상태를 유지합니다.
   const [auth, setAuth] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? null

@@ -63,6 +63,7 @@ function ProgramListPage() {
   const [status, setStatus] = useState(searchParams.get('status') || DEFAULT_FILTERS.status)
   const [sort, setSort] = useState(searchParams.get('sort') || DEFAULT_FILTERS.sort)
 
+  // 현재는 공고 목록을 Mock 데이터에서 가져와 검색과 필터를 적용합니다.
   const regions = useMemo(
     () => [...new Set(programMocks.map((program) => program.region).filter(Boolean))],
     [],
