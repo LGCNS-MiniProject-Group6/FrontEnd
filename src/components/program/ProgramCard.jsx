@@ -19,7 +19,7 @@ function ProgramCard({ program, featured = false }) {
   const dDay = getDday(applicationEndAt)
 
   return (
-    <Card className={featured ? 'program-card program-card--featured' : 'program-card'}>
+    <Card as="article" className={featured ? 'program-card program-card--featured' : 'program-card'}>
       <div className="program-card__meta">
         <StatusBadge tone="info">{category}</StatusBadge>
         <StatusBadge tone={dDay === '마감' ? 'neutral' : 'success'}>{dDay}</StatusBadge>
@@ -30,11 +30,11 @@ function ProgramCard({ program, featured = false }) {
         <div><dt>신청기간</dt><dd>{formatPeriod(applicationStartAt, applicationEndAt)}</dd></div>
         <div><dt>지원대상</dt><dd>{target}</dd></div>
       </dl>
-      {!featured && <div className="program-card__support"><span>지원내용</span><p>{summary}</p></div>}
+      <div className="program-card__support"><span>지원내용</span><p>{summary}</p></div>
       <div className="program-card__actions">
         <Button variant="secondary">♡ 관심공고</Button>
         <Link className="button button--primary button--medium" to={programDetailPath(pblancId)}>
-          상세보기
+          상세보기 <span aria-hidden="true">→</span>
         </Link>
       </div>
     </Card>
