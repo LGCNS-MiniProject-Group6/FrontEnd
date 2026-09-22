@@ -9,17 +9,17 @@ export const authApi = {
   checkEmail: (email) => axiosInstance.get('/api/auth/check-email', { params: { email } }),
 
   // AUTH-03 인증번호 발송
-  sendPhoneCode: (phoneNumber) => axiosInstance.post('/api/phone-verification/send', { phoneNumber }),
+  sendPhoneCode: (phoneNumber) => axiosInstance.post('/api/auth/phone-verification/send', { phoneNumber }),
 
   // AUTH-04 인증번호 확인
   verifyPhoneCode: (phoneNumber, code) =>
-    axiosInstance.post('/api/phone-verification/verify', { phoneNumber, code }),
+    axiosInstance.post('/api/auth/phone-verification/verify', { phoneNumber, code }),
 
   // AUTH-05 로그인
   login: (data) => axiosInstance.post('/api/auth/login', data),
 
-// AUTH-06 로그아웃 (Refresh 토큰을 body로 전달)
-  logout: (refreshToken) =>  axiosInstance.post('/api/auth/logout', { refreshToken }),
+  // AUTH-06 로그아웃 (Refresh 토큰을 body로 전달)
+  logout: (refreshToken) => axiosInstance.post('/api/auth/logout', { refreshToken }),
 
   // AUTH-07 토큰 재발급 (Refresh 토큰 필요) - 백엔드 대기 중, 연동은 나중에
   reissueToken: () => axiosInstance.post('/api/auth/reissue'),

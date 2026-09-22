@@ -19,7 +19,15 @@ function LoginPage() {
       navigate('/')
     } catch (err) {
       console.error(err)
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+
+      if (!err.response) {
+        // 서버 자체에 응답을 못 받은 경우 (CORS, 서버 꺼짐, 네트워크 문제 등)
+        setError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.')
+      } else if (err.response.status === 401) {
+        setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+      } else {
+        setError('로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.')
+      }
     }
   }
 
@@ -54,7 +62,9 @@ function LoginPage() {
           try {
             const res = await authApi.signup({
               email: 'test@test.com',
-              password: 'test1234',
+              password: 'Test1234!',
+              name: '테스트유저',
+              phone: '01012345678',
             })
             console.log('회원가입 성공:', res.data)
           } catch (err) {
