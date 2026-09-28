@@ -8,6 +8,7 @@ import SignupStepCard from '../components/signup/SignupStepCard'
 import { ROUTES } from '../constants/routes'
 import { useAuth } from '../hooks/useAuth'
 import {
+  formatTimer,
   getApiErrorMessage,
   getPasswordValidationError,
   isValidEmail,
@@ -48,10 +49,6 @@ const stepCopy = [
   ['입력정보 확인', '입력한 정보를 확인하고 가입을 완료해주세요.'],
 ]
 
-// [추가] 초 → "02:59" 형식
-const formatTime = (seconds) =>
-  `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
-
 function SignupPage() {
   const [step, setStep] = useState(0)
   const [form, setForm] = useState(initialForm)
@@ -75,7 +72,7 @@ function SignupPage() {
 
   // [추가] 번호가 바뀌면 인증을 처음부터 다시 받도록 초기화
   const handlePhoneChange = (value) => {
-    setField('phone', value)
+    setField('phone', value.replace(/\D/g, '').slice(0, 11)) // [수정] 숫자만, 최대 11자리
     setVerification(initialVerification)
     setTimeLeft(0)
   }
@@ -245,14 +242,15 @@ function SignupPage() {
     const codeHelperText = verification.verified
       ? '인증이 완료되었습니다.'
       : timeLeft > 0
-        ? `남은 시간 ${formatTime(timeLeft)}`
+        ? `남은 시간 ${formatTimer(timeLeft)}`
         : '인증 시간이 만료되었습니다. 인증번호를 다시 받아주세요.'
 
     return (
       <div className="stack">
         <div style={rowStyle}>
           <div style={{ flex: 1 }}>
-            <Input label="휴대폰 번호" type="tel" value={form.phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="010-1234-5678" autoFocus />
+            {/* [수정] 숫자만 입력, 최대 11자리, 하이픈 없는 예시 */}
+            <Input label="휴대폰 번호" type="tel" inputMode="numeric" maxLength={11} value={form.phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="01012345678" autoFocus />
           </div>
           <Button variant="secondary" onClick={sendVerificationCode} disabled={requestState !== 'idle' || verification.verified}>
             {requestState === 'sending-code' ? '발송 중...' : verification.sent ? '재전송' : '인증번호 받기'}
