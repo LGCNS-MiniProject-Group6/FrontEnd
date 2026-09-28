@@ -25,7 +25,6 @@ const initialForm = {
   region: '',
   industry: '',
   openingDate: '',
-  businessType: '개인사업자',
   employeeCount: 0,
   annualRevenue: '',
 }
@@ -43,7 +42,6 @@ const stepCopy = [
   ['사업장 지역 입력', '주 사업장이 위치한 시·도 및 시·군·구를 입력해주세요.'],
   ['업종 입력', '사업자등록증의 주업종 또는 분류 코드를 입력해주세요.'],
   ['개업일 입력', '사업자등록증에 기재된 개업연월일을 입력해주세요.'],
-  ['사업자 유형 선택', '현재 운영 중인 사업자 유형을 선택해주세요.'],
   ['상시근로자 수 입력', '대표자를 제외한 상시근로자 수를 입력해주세요.'],
   ['연 평균 매출액 입력', '직전 사업연도 기준 연 평균 매출액을 입력해주세요.'],
   ['입력정보 확인', '입력한 정보를 확인하고 가입을 완료해주세요.'],
@@ -57,11 +55,11 @@ function SignupPage() {
   // [추가] 휴대폰 인증 상태와 남은 시간
   const [verification, setVerification] = useState(initialVerification)
   const [timeLeft, setTimeLeft] = useState(0)
-  const { signup } = useAuth()
+  const { register } = useAuth()
   const navigate = useNavigate()
 
   const setField = (field, value) => setForm((current) => ({ ...current, [field]: value }))
-  const progressStep = step <= 3 ? step + 1 : step >= 5 && step <= 10 ? step : null
+  const progressStep = step <= 3 ? step + 1 : step >= 5 && step <= 9 ? step : null
 
   // [추가] 인증번호 발송 후 1초마다 남은 시간 감소 (인증 완료 or 0초가 되면 멈춤)
   useEffect(() => {
@@ -126,7 +124,7 @@ function SignupPage() {
   }
 
   const validateCurrentStep = () => {
-    const requiredByStep = ['email', 'password', 'name', 'phone', null, 'region', 'industry', 'openingDate', 'businessType', 'employeeCount', 'annualRevenue']
+    const requiredByStep = ['email', 'password', 'name', 'phone', null, 'region', 'industry', 'openingDate', 'employeeCount', 'annualRevenue']
     const field = requiredByStep[step]
     if (field && form[field] === '') return '필수 정보를 입력해주세요.'
     if (step === 0 && !isValidEmail(form.email)) return '올바른 이메일 형식을 입력해주세요.'
@@ -204,7 +202,6 @@ function SignupPage() {
           region: form.region,
           industry: form.industry,
           openingDate: form.openingDate,
-          businessType: form.businessType,
           employeeCount: Number(form.employeeCount),
           annualRevenue: Number(form.annualRevenue),
         }
@@ -212,21 +209,28 @@ function SignupPage() {
 
     setRequestState('signing-up')
     try {
-      await signup({
-        email: form.email.trim(),
-        password: form.password,
-        name: form.name.trim(),
-        phone: form.phone.replace(/\D/g, ''),
-      })
-      navigate(ROUTES.LOGIN, {
-        replace: true,
-        state: {
-          signupSuccess: true,
+      await register({
+        account: {
           email: form.email.trim(),
-          business,
+          password: form.password,
+          name: form.name.trim(),
+          phone: form.phone.replace(/\D/g, ''),
         },
+        business,
       })
+      navigate(ROUTES.HOME, { replace: true })
     } catch (requestError) {
+      if (requestError.accountCreated) {
+        navigate(ROUTES.LOGIN, {
+          replace: true,
+          state: {
+            signupSuccess: true,
+            email: form.email.trim(),
+            followUpError: '회원가입은 완료됐지만 로그인 또는 사업정보 저장을 완료하지 못했습니다. 로그인 후 다시 입력해주세요.',
+          },
+        })
+        return
+      }
       setError(getApiErrorMessage(
         requestError,
         '회원가입 중 문제가 발생했습니다. 입력 정보를 확인해주세요.',
@@ -292,9 +296,8 @@ function SignupPage() {
     if (step === 5) return <Input label="주요 사업장 소재지" value={form.region} onChange={(e) => setField('region', e.target.value)} placeholder="서울특별시 강남구" autoFocus />
     if (step === 6) return <><Input label="주업종 또는 분류 코드" value={form.industry} onChange={(e) => setField('industry', e.target.value)} placeholder="온라인 소매업" autoFocus /><div className="signup-suggestions"><span>주요 추천 분야</span>{['제조업', '정보통신업', '도소매업', '전문 서비스업'].map((item) => <button type="button" key={item} onClick={() => setField('industry', item)}>{item}</button>)}</div></>
     if (step === 7) return <Input label="개업연월일" type="date" value={form.openingDate} onChange={(e) => setField('openingDate', e.target.value)} autoFocus />
-    if (step === 8) return <div className="choice-list">{['개인사업자', '법인사업자'].map((item) => <button type="button" key={item} className={form.businessType === item ? 'choice choice--active' : 'choice'} onClick={() => setField('businessType', item)}><span aria-hidden="true" /> <div><strong>{item}</strong><small>{item === '개인사업자' ? '일반과세 및 세금 혜택 중심 맞춤형 분류' : '주식회사·유한회사 등 투자유치 특화 공고 분류'}</small></div></button>)}</div>
-    if (step === 9) return <div className="number-stepper"><Button variant="secondary" onClick={() => setField('employeeCount', Math.max(0, Number(form.employeeCount) - 1))}>−</Button><strong>{form.employeeCount}<small>명</small></strong><Button variant="secondary" onClick={() => setField('employeeCount', Number(form.employeeCount) + 1)}>＋</Button></div>
-    if (step === 10) return <Input label="연 평균 매출액" type="number" min="0" value={form.annualRevenue} onChange={(e) => setField('annualRevenue', e.target.value)} helperText={form.annualRevenue ? `${formatCurrency(form.annualRevenue)}원` : '숫자로 입력해주세요.'} placeholder="120000000" autoFocus />
+    if (step === 8) return <div className="number-stepper"><Button variant="secondary" onClick={() => setField('employeeCount', Math.max(0, Number(form.employeeCount) - 1))}>−</Button><strong>{form.employeeCount}<small>명</small></strong><Button variant="secondary" onClick={() => setField('employeeCount', Number(form.employeeCount) + 1)}>＋</Button></div>
+    if (step === 9) return <Input label="연 평균 매출액" type="number" min="0" value={form.annualRevenue} onChange={(e) => setField('annualRevenue', e.target.value)} helperText={form.annualRevenue ? `${formatCurrency(form.annualRevenue)}원` : '숫자로 입력해주세요.'} placeholder="120000000" autoFocus />
     return null
   }
 
@@ -316,11 +319,11 @@ function SignupPage() {
     )
   }
 
-  if (step === 11) {
+  if (step === 10) {
     const summary = [
       ['이메일', form.email], ['이름', form.name], ['휴대폰', form.phone],
       ['사업장', form.region], ['업종', form.industry], ['개업일', form.openingDate],
-      ['사업자 유형', form.businessType], ['상시근로자', `${form.employeeCount}명`],
+      ['상시근로자', `${form.employeeCount}명`],
       ['연 매출', `${formatCurrency(form.annualRevenue)}원`],
     ]
     return (
@@ -329,7 +332,7 @@ function SignupPage() {
         <SignupStepCard title={stepCopy[step][0]} description={stepCopy[step][1]}>
           <dl className="signup-summary">{summary.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
           {error && <p className="form-error" role="alert">{error}</p>}
-          <div className="signup-actions"><Button variant="secondary" onClick={() => setStep(10)} disabled={requestState !== 'idle'}>수정하기</Button><Button onClick={() => finishSignup(true)} disabled={requestState !== 'idle'}>{requestState === 'signing-up' ? '가입 처리 중...' : '가입 완료하고 시작하기'}</Button></div>
+          <div className="signup-actions"><Button variant="secondary" onClick={() => setStep(9)} disabled={requestState !== 'idle'}>수정하기</Button><Button onClick={() => finishSignup(true)} disabled={requestState !== 'idle'}>{requestState === 'signing-up' ? '가입 처리 중...' : '가입 완료하고 시작하기'}</Button></div>
         </SignupStepCard>
       </main>
     )
@@ -338,7 +341,7 @@ function SignupPage() {
   return (
     <main className="signup-page">
       <Link className="brand signup-brand" to={ROUTES.LOGIN}><img className="brand__logo" src={supportUpLogo} alt="" />지원UP</Link>
-      <SignupStepCard current={progressStep} total={10} title={stepCopy[step][0]} description={stepCopy[step][1]}>
+      <SignupStepCard current={progressStep} total={9} title={stepCopy[step][0]} description={stepCopy[step][1]}>
         {/* [수정] onKeyDown={handleEnter} 추가 */}
         <div className="signup-card__body" onKeyDown={handleEnter}>{renderField()}{error && <p className="form-error" role="alert">{error}</p>}</div>
         <div className="signup-actions">

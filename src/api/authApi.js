@@ -14,8 +14,11 @@ export const authApi = {
   login: (payload) => axiosInstance.post('/auth/login', payload),
   logout: (payload) => axiosInstance.post('/auth/logout', payload),
   reissue: (payload) => axiosInstance.post('/auth/reissue', payload),
-  findId: (payload) => axiosInstance.post('/auth/find-id', payload),
-  resetPassword: (payload) => axiosInstance.put('/auth/password', payload),
+  sendFindEmailCode: (payload) => axiosInstance.post('/auth/find-email/send-code', payload),
+  verifyFindEmailCode: (payload) => axiosInstance.post('/auth/find-email/verify', payload),
+  sendPasswordResetCode: (payload) => axiosInstance.post('/auth/password-reset/send-code', payload),
+  verifyPasswordResetCode: (payload) => axiosInstance.post('/auth/password-reset/verify', payload),
+  resetPassword: (payload) => axiosInstance.post('/auth/password-reset', payload),
   getMyInfo: () => axiosInstance.get('/auth/users/me'),
   updateMyInfo: (payload) => axiosInstance.put('/auth/users/me', payload),
 }

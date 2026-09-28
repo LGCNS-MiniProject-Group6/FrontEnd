@@ -6,4 +6,5 @@ export const businessApi = {
     axiosInstance.post('/users/me/business-info', payload),
   updateBusinessInfo: (payload) =>
     axiosInstance.put('/users/me/business-info', payload),
+  deleteBusinessInfo: () => axiosInstance.delete('/users/me/business-info'),
 }

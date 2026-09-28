@@ -7,7 +7,7 @@ import StatusBadge from '../common/StatusBadge'
 import { formatPeriod, getDday } from '../../utils/dateUtils'
 import { favoriteApi } from '../../api/favoriteApi'
 
-function ProgramCard({ program, featured = false }) {
+function ProgramCard({ program, featured = false, onFavoriteChange }) {
   const {
     pblancId,
     title = '지원사업명 미정',
@@ -15,6 +15,7 @@ function ProgramCard({ program, featured = false }) {
     organization = '기관 정보 없음',
     applicationStartAt,
     applicationEndAt,
+    rawApplyPeriod,
     target = '지원대상 정보 없음',
     summary = '지원내용 정보가 아직 등록되지 않았습니다.',
     isFavorite: initialIsFavorite = false,
@@ -23,13 +24,14 @@ function ProgramCard({ program, featured = false }) {
 
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite)
   const [loading, setLoading] = useState(false)
+  const displayedFavorite = onFavoriteChange ? initialIsFavorite : isFavorite
 
   const handleToggleFavorite = async (e) => {
     e.preventDefault() // Link 등 상위 요소와 겹칠 경우 대비
     if (loading) return
     setLoading(true)
 
-    const prevState = isFavorite
+    const prevState = displayedFavorite
     setIsFavorite(!prevState) // 낙관적 업데이트
 
     try {
@@ -38,9 +40,17 @@ function ProgramCard({ program, featured = false }) {
       } else {
         await favoriteApi.addFavorite(pblancId)
       }
+      onFavoriteChange?.(pblancId, !prevState)
     } catch (err) {
-      console.error('찜하기 실패', err)
-      setIsFavorite(prevState) // 실패 시 롤백
+      if (!prevState && err.response?.status === 409) {
+        setIsFavorite(true)
+        onFavoriteChange?.(pblancId, true)
+      } else if (prevState && err.response?.status === 404) {
+        setIsFavorite(false)
+        onFavoriteChange?.(pblancId, false)
+      } else {
+        setIsFavorite(prevState) // 실패 시 롤백
+      }
     } finally {
       setLoading(false)
     }
@@ -55,7 +65,7 @@ function ProgramCard({ program, featured = false }) {
       <h3>{title}</h3>
       <dl className="program-card__details">
         <div><dt>기관</dt><dd>{organization}</dd></div>
-        <div><dt>신청기간</dt><dd>{formatPeriod(applicationStartAt, applicationEndAt)}</dd></div>
+        <div><dt>신청기간</dt><dd>{formatPeriod(applicationStartAt, applicationEndAt, rawApplyPeriod)}</dd></div>
         <div><dt>지원대상</dt><dd>{target}</dd></div>
       </dl>
       <div className="program-card__support"><span>지원내용</span><p>{summary}</p></div>
@@ -64,9 +74,9 @@ function ProgramCard({ program, featured = false }) {
           variant="secondary"
           onClick={handleToggleFavorite}
           disabled={loading}
-          className={isFavorite ? 'is-favorite' : ''}
+          className={displayedFavorite ? 'is-favorite' : ''}
         >
-          {isFavorite ? '♥' : '♡'} 관심공고
+          {displayedFavorite ? '♥' : '♡'} 관심공고
         </Button>
         <Link className="button button--primary button--medium" to={programDetailPath(pblancId)}>
           상세보기 <span aria-hidden="true">→</span>

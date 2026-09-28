@@ -28,13 +28,10 @@ function LoginPage() {
     setIsSubmitting(true)
 
     try {
-      await login(
-        {
-          email: form.email.trim(),
-          password: form.password,
-        },
-        location.state?.business ? { business: location.state.business } : {},
-      )
+      await login({
+        email: form.email.trim(),
+        password: form.password,
+      })
       const destination = location.state?.from?.pathname || ROUTES.HOME
       navigate(destination, { replace: true })
     } catch (requestError) {
@@ -72,7 +69,7 @@ function LoginPage() {
           <p>정부지원사업 AI 신청 도우미를 시작해보세요.</p>
           {location.state?.signupSuccess && (
             <div className="auth-notice" role="status">
-              회원가입이 완료되었습니다. 가입한 계정으로 로그인해주세요.
+              {location.state?.followUpError || '회원가입이 완료되었습니다. 가입한 계정으로 로그인해주세요.'}
             </div>
           )}
           <div className="login-card__fields">

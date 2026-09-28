@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { favoriteApi } from '../api/favoriteApi'
+import { programApi } from '../api/programApi'
 import AppLayout from '../components/common/AppLayout'
+import ErrorMessage from '../components/common/ErrorMessage'
+import Loading from '../components/common/Loading'
 import ProgramFilter from '../components/program/ProgramFilter'
 import ProgramSearchBar from '../components/program/ProgramSearchBar'
 import ProgramCard from '../components/program/ProgramCard'
@@ -10,13 +14,48 @@ import HomeFooter from '../components/home/HomeFooter'
 import ProcessSection from '../components/home/ProcessSection'
 import { ROUTES } from '../constants/routes'
 import { useAuth } from '../hooks/useAuth'
-import { programMocks } from '../mocks/programMock'
+import { normalizeProgramPage } from '../utils/programUtils'
 
 function HomePage() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('전체')
+  const [latestPrograms, setLatestPrograms] = useState([])
+  const [favoriteIds, setFavoriteIds] = useState(() => new Set())
+  const [programState, setProgramState] = useState('loading')
+  const [requestVersion, setRequestVersion] = useState(0)
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, business, refreshSession } = useAuth()
+
+  useEffect(() => {
+    refreshSession().catch(() => undefined)
+  }, [refreshSession])
+
+  useEffect(() => {
+    let active = true
+    Promise.all([
+      programApi.getPrograms({ page: 0, size: 3, sort: 'applyStartDate,desc' }),
+      favoriteApi.getFavorites().catch(() => ({ data: [] })),
+    ]).then(([{ data: programs }, { data: favorites }]) => {
+      if (!active) return
+      setLatestPrograms(normalizeProgramPage(programs))
+      setFavoriteIds(new Set((Array.isArray(favorites) ? favorites : []).map((favorite) => favorite.pblancId)))
+      setProgramState('success')
+    }).catch(() => {
+      if (active) setProgramState('error')
+    })
+    return () => {
+      active = false
+    }
+  }, [requestVersion])
+
+  const updateFavorite = (pblancId, isFavorite) => {
+    setFavoriteIds((current) => {
+      const next = new Set(current)
+      if (isFavorite) next.add(pblancId)
+      else next.delete(pblancId)
+      return next
+    })
+  }
 
   const search = (event) => {
     event.preventDefault()
@@ -58,10 +97,10 @@ function HomePage() {
           <ProgramFilter selected={category} onSelect={setCategory} compact />
         </div>
         <aside className="business-snapshot">
-          <div><span>내 사업 프로필</span><strong>{user?.business?.industry || '사업정보 미입력'}</strong></div>
+          <div><span>내 사업 프로필</span><strong>{business?.industry || '사업정보 미입력'}</strong></div>
           <dl>
-            <div><dt>지역</dt><dd>{user?.business?.region || '미입력'}</dd></div>
-            <div><dt>업력</dt><dd>{user?.business?.businessPeriod || '약 3년'}</dd></div>
+            <div><dt>지역</dt><dd>{business?.region || '미입력'}</dd></div>
+            <div><dt>개업일</dt><dd>{business?.openingDate || '미입력'}</dd></div>
           </dl>
           <Link to={ROUTES.MY_PAGE} aria-label="사업정보 확인하기">→</Link>
         </aside>
@@ -105,14 +144,24 @@ function HomePage() {
 
       <section className="recommendation-section">
         <Reveal className="section-heading section-heading--editorial">
-          <div><span className="eyebrow">CURATED FOR YOU</span><h2>{user?.name ?? '사용자'}님에게<br />지금 가까운 지원사업</h2></div>
-          <div><p>등록한 사업정보를 기준으로 관련성이 높은 공고부터 골랐어요.</p><Link to={ROUTES.PROGRAMS}>전체 공고 보기 →</Link></div>
+          <div><span className="eyebrow">LATEST PROGRAMS</span><h2>{user?.name ?? '사용자'}님이<br />확인할 수 있는 최신 공고</h2></div>
+          <div><p>현재 Backend에 등록된 지원사업 중 최근 공고를 보여드려요.</p><Link to={ROUTES.PROGRAMS}>전체 공고 보기 →</Link></div>
         </Reveal>
         <div className="program-grid program-grid--home">
-          {/* 현재 추천 공고는 화면 확인용 Mock 데이터입니다. */}
-          {programMocks.slice(0, 3).map((program, index) => (
+          {programState === 'loading' ? (
+            <Loading label="최신 지원사업을 불러오고 있어요." />
+          ) : programState === 'error' ? (
+            <ErrorMessage title="최신 지원사업을 불러오지 못했습니다." onRetry={() => {
+              setProgramState('loading')
+              setRequestVersion((current) => current + 1)
+            }} />
+          ) : latestPrograms.map((program, index) => (
             <Reveal variant="up" delay={index} key={program.pblancId}>
-              <ProgramCard program={program} featured />
+              <ProgramCard
+                program={{ ...program, isFavorite: favoriteIds.has(program.pblancId) }}
+                featured
+                onFavoriteChange={updateFavorite}
+              />
             </Reveal>
           ))}
         </div>

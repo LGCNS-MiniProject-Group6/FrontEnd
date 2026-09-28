@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
+import { authApi } from '../../api/authApi'
 import Button from '../common/Button'
 import Input from '../common/Input'
-import { authMockService } from '../../services/authMockService'
-import { formatTimer } from '../../utils/authUtils'
+import { formatTimer, getApiErrorMessage } from '../../utils/authUtils'
 
 const VERIFICATION_SECONDS = 180
 
@@ -53,14 +53,15 @@ function PhoneVerification({ email, phone, onVerified }) {
     setError('')
 
     try {
-      const result = await authMockService.verifyPhoneVerification({ code })
-      if (!result.verified) {
-        setError('인증번호가 올바르지 않습니다.')
-        return
-      }
+      const { data } = await authApi.verifyPasswordResetCode({
+        email,
+        phone: phone.replace(/\D/g, ''),
+        code,
+      })
       setVerified(true)
-    } catch {
-      setError('일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+      onVerified(data.resetToken)
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, '인증번호를 확인하지 못했습니다.'))
     } finally {
       setRequestState('idle')
     }
@@ -73,13 +74,16 @@ function PhoneVerification({ email, phone, onVerified }) {
     setError('')
 
     try {
-      await authMockService.sendPhoneVerification({ email, phone })
+      await authApi.sendPasswordResetCode({
+        email,
+        phone: phone.replace(/\D/g, ''),
+      })
       setCode('')
       setVerified(false)
       setRemainingSeconds(VERIFICATION_SECONDS)
       setTimerVersion((current) => current + 1)
-    } catch {
-      setError('인증번호를 다시 발송하지 못했습니다. 잠시 후 다시 시도해주세요.')
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, '인증번호를 다시 발송하지 못했습니다.'))
     } finally {
       setRequestState('idle')
     }
@@ -116,7 +120,6 @@ function PhoneVerification({ email, phone, onVerified }) {
       {verified ? (
         <div className="verification-complete" role="status">
           <p>✓ 인증이 완료되었습니다.</p>
-          <Button size="large" onClick={onVerified}>새 비밀번호 설정</Button>
         </div>
       ) : (
         <Button type="submit" size="large" disabled={requestState !== 'idle' || expired}>

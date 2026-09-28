@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { authApi } from '../api/authApi'
 import supportUpLogo from '../assets/support-up-logo.png'
 import PhoneVerification from '../components/auth/PhoneVerification'
 import Button from '../components/common/Button'
@@ -7,8 +8,7 @@ import Card from '../components/common/Card'
 import ErrorMessage from '../components/common/ErrorMessage'
 import Input from '../components/common/Input'
 import { ROUTES } from '../constants/routes'
-import { authMockService } from '../services/authMockService'
-import { getPasswordValidationError, isValidEmail, isValidPhone } from '../utils/authUtils'
+import { getApiErrorMessage, getPasswordValidationError, isValidEmail, isValidPhone } from '../utils/authUtils'
 
 const initialAccount = { email: '', phone: '' }
 const initialPasswords = { password: '', passwordConfirm: '' }
@@ -20,12 +20,13 @@ function ForgotPasswordPage() {
   const [errors, setErrors] = useState({})
   const [requestState, setRequestState] = useState('idle')
   const [verificationCompleted, setVerificationCompleted] = useState(false)
-  const [requestError, setRequestError] = useState(false)
+  const [resetToken, setResetToken] = useState('')
+  const [requestError, setRequestError] = useState('')
 
   const setAccountField = (field, value) => {
     setAccount((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: '' }))
-    setRequestError(false)
+    setRequestError('')
   }
 
   const setPasswordField = (field, value) => {
@@ -48,20 +49,24 @@ function ForgotPasswordPage() {
     if (Object.keys(nextErrors).length > 0) return
 
     setRequestState('sending')
-    setRequestError(false)
+    setRequestError('')
 
     try {
-      await authMockService.sendPhoneVerification({ email, phone })
-      setAccount({ email, phone })
+      await authApi.sendPasswordResetCode({
+        email,
+        phone: phone.replace(/\D/g, ''),
+      })
+      setAccount({ email, phone: phone.replace(/\D/g, '') })
       setStep('verification')
-    } catch {
-      setRequestError(true)
+    } catch (error) {
+      setRequestError(getApiErrorMessage(error, '인증번호를 발송하지 못했습니다.'))
     } finally {
       setRequestState('idle')
     }
   }
 
-  const openPasswordReset = () => {
+  const openPasswordReset = (token) => {
+    setResetToken(token)
     setVerificationCompleted(true)
     setStep('reset')
   }
@@ -84,18 +89,18 @@ function ForgotPasswordPage() {
     if (Object.keys(nextErrors).length > 0) return
 
     setRequestState('resetting')
-    setRequestError(false)
+    setRequestError('')
 
     try {
-      await authMockService.resetPassword({
-        email: account.email,
+      await authApi.resetPassword({
+        resetToken,
         newPassword: passwords.password,
-        verificationCompleted,
+        newPasswordConfirm: passwords.passwordConfirm,
       })
       setPasswords(initialPasswords)
       setStep('complete')
-    } catch {
-      setRequestError(true)
+    } catch (error) {
+      setRequestError(getApiErrorMessage(error, '비밀번호를 변경하지 못했습니다.'))
     } finally {
       setRequestState('idle')
     }
@@ -154,7 +159,7 @@ function ForgotPasswordPage() {
                   error={errors.passwordConfirm}
                 />
               </div>
-              {requestError && <ErrorMessage title="비밀번호를 변경하지 못했습니다." description="잠시 후 다시 시도해주세요." />}
+              {requestError && <ErrorMessage title={requestError} description="잠시 후 다시 시도해주세요." />}
               <Button type="submit" size="large" disabled={requestState !== 'idle'}>
                 {requestState === 'resetting' ? '변경 중...' : '비밀번호 변경'}
               </Button>
@@ -184,7 +189,7 @@ function ForgotPasswordPage() {
                   error={errors.phone}
                 />
               </div>
-              {requestError && <ErrorMessage title="인증번호를 발송하지 못했습니다." description="잠시 후 다시 시도해주세요." />}
+              {requestError && <ErrorMessage title={requestError} description="입력한 계정 정보를 확인해주세요." />}
               <Button type="submit" size="large" disabled={requestState !== 'idle'}>
                 {requestState === 'sending' ? '인증번호 발송 중...' : '인증번호 받기'}
               </Button>

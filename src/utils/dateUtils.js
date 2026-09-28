@@ -44,14 +44,16 @@ export function formatDate(value) {
   return parsed ? formatDatePart(parsed) : '날짜 정보 없음'
 }
 
-export function formatPeriod(start, end) {
-  if (!start && !end) return '상시 접수'
+export function formatPeriod(start, end, rawApplyPeriod) {
+  const rawPeriod = String(rawApplyPeriod ?? '').trim()
+
+  if (!start && !end) return rawPeriod || '상시 접수'
 
   const parsedStart = parseDate(start)
   const parsedEnd = parseDate(end)
 
   if ((start && !parsedStart) || (end && !parsedEnd)) {
-    return '신청기간 정보 없음'
+    return rawPeriod || '신청기간 정보 없음'
   }
 
   if (parsedStart && parsedEnd) {

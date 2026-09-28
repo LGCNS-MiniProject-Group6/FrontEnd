@@ -70,7 +70,9 @@
 .auth-result h1 { margin: 10px 0 12px; }
 .auth-result > p { color: var(--color-text-muted); }
 .auth-result > .button { width: 100%; margin-top: 28px; }
-.masked-id { display: block; width: 100%; margin: 14px 0; padding: 16px; border-radius: 10px; color: var(--color-primary-dark); background: var(--color-primary-soft); font-size: 1.25rem; }
+.found-email { display: block; width: 100%; margin: 14px 0; padding: 16px; overflow-wrap: anywhere; border-radius: 10px; color: var(--color-primary-dark); background: var(--color-primary-soft); font-size: 1.25rem; }
+.find-id-verification-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
+.find-id-verification-row > .button { min-height: 52px; white-space: nowrap; }
 .auth-progress { margin-bottom: 28px; color: var(--color-primary); font-size: 0.78rem; font-weight: 800; }
 .auth-progress > div { height: 6px; margin-top: 8px; overflow: hidden; border-radius: 999px; background: #dfe5ee; }
 .auth-progress__fill { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width 0.25s ease; }
@@ -104,4 +106,6 @@
   .auth-card { padding: 28px 20px; }
   .auth-actions { grid-template-columns: 1fr; }
   .verification-meta { align-items: stretch; flex-direction: column; }
+  .find-id-verification-row { grid-template-columns: 1fr; }
+  .find-id-verification-row > .button { width: 100%; }
 }

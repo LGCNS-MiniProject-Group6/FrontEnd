@@ -143,7 +143,7 @@
 .program-card__details dd { margin-top: 3px; color: #5f5d65; font-size: 0.82rem; font-weight: 650; }
 .program-card__support { margin-top: 21px; color: var(--color-text-muted); }
 .program-card__support span { display: block; margin-bottom: 5px; font-size: 0.7rem; font-weight: 700; }
-.program-card__support p { font-size: 0.83rem; line-height: 1.65; }
+.program-card__support p { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; font-size: 0.83rem; line-height: 1.65; }
 .program-card__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: auto; padding-top: 27px; }
 
 .benefit-section { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 100px; padding: 130px 0; border-top: 1px solid var(--color-border); }
@@ -184,9 +184,21 @@
 .filter-panel__selects { display: flex; gap: 10px; }
 .filter-panel label { display: grid; gap: 5px; color: var(--color-text-muted); font-size: 0.75rem; font-weight: 700; }
 .filter-panel select { min-height: 38px; padding: 0 30px 0 10px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text); background: white; }
+.filter-panel__ai { display: grid; gap: 5px; }
+.filter-panel__ai > span { color: var(--color-text-muted); font-size: 0.75rem; font-weight: 700; }
+.ai-recommendation-button { min-height: 38px; padding: 0 16px; white-space: nowrap; }
+.ai-recommendation-status { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-top: 14px; padding: 18px 20px; border: 1px solid #d8d1f0; border-radius: var(--radius-medium); background: var(--color-primary-soft); }
+.ai-recommendation-status strong { color: var(--color-primary-dark); }
+.ai-recommendation-status p { margin-top: 4px; color: var(--color-text-muted); font-size: 0.86rem; }
+.ai-recommendation-status .button { flex: 0 0 auto; }
+.ai-recommendation-status--error { border-color: #f1c2bc; background: #fff; }
 .program-list-section { margin-top: 38px; }
 .program-list { display: grid; gap: 16px; }
 .program-list .program-card { min-height: 260px; }
+.program-list-state { display: grid; place-items: center; min-height: 220px; border: 1px solid var(--color-border); border-radius: var(--radius-medium); background: white; }
+.program-pagination { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 28px; }
+.program-pagination span { color: var(--color-text-muted); }
+.program-pagination strong { color: var(--color-primary); }
 .program-empty { position: relative; }
 .program-empty > .button { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); }
 .program-empty .empty-state { padding-bottom: 112px; }
@@ -254,7 +266,7 @@
 
 .profile-edit-card { margin-bottom: 18px; padding: 28px; }
 .profile-edit-card h2 { margin-bottom: 22px; }
-.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); align-items: start; gap: 20px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
 .not-found { display: grid; justify-items: center; gap: 14px; text-align: center; }
 .not-found > span { color: var(--color-primary); font-size: 5rem; font-weight: 900; line-height: 1; }
@@ -279,6 +291,7 @@
   .program-grid--home > .reveal:first-child .program-card { min-height: 390px; }
   .filter-panel { align-items: stretch; flex-direction: column; }
   .filter-panel__selects { flex-wrap: wrap; }
+  .ai-recommendation-status { align-items: flex-start; flex-direction: column; }
   .detail-layout { grid-template-columns: 1fr; }
   .detail-helper { position: static; }
 }
