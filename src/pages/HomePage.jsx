@@ -10,7 +10,6 @@ import ProgramSearchBar from '../components/program/ProgramSearchBar'
 import ProgramCard from '../components/program/ProgramCard'
 import Reveal from '../components/common/Reveal'
 import AnalysisPreview from '../components/home/AnalysisPreview'
-import HomeFooter from '../components/home/HomeFooter'
 import ProcessSection from '../components/home/ProcessSection'
 import { ROUTES } from '../constants/routes'
 import { useAuth } from '../hooks/useAuth'
@@ -189,7 +188,6 @@ function HomePage() {
         </div>
       </Reveal>
 
-      <HomeFooter />
     </AppLayout>
   )
 }
