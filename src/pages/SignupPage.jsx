@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authApi } from '../api/authApi'
 import supportUpLogo from '../assets/support-up-logo.png'
@@ -29,11 +29,15 @@ const initialForm = {
   annualRevenue: '',
 }
 
+// [추가] 휴대폰 인증 상태 초기값 / 인증 제한시간(초)
+const initialVerification = { sent: false, code: '', verified: false }
+const VERIFY_TIME_LIMIT = 180
+
 const stepCopy = [
   ['이메일 입력', '회원가입에 사용할 이메일을 입력해주세요.'],
   ['비밀번호 설정', '영문, 숫자, 특수문자를 포함한 8자 이상의 비밀번호를 설정해주세요.'],
   ['이름 입력', '서비스 이용 시 표시될 이름을 입력해주세요.'],
-  ['휴대폰 번호 입력', '맞춤 지원 정보 안내를 받을 휴대폰 번호를 입력해주세요.'],
+  ['휴대폰 번호 인증', '휴대폰 번호를 입력하고 문자로 받은 인증번호를 확인해주세요.'],
   ['기본정보 입력 완료', '이제 사업정보를 입력하면 맞춤 공고와 AI 검수를 더 정확하게 이용할 수 있어요.'],
   ['사업장 지역 입력', '주 사업장이 위치한 시·도 및 시·군·구를 입력해주세요.'],
   ['업종 입력', '사업자등록증의 주업종 또는 분류 코드를 입력해주세요.'],
@@ -44,16 +48,85 @@ const stepCopy = [
   ['입력정보 확인', '입력한 정보를 확인하고 가입을 완료해주세요.'],
 ]
 
+// [추가] 초 → "02:59" 형식
+const formatTime = (seconds) =>
+  `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
+
 function SignupPage() {
   const [step, setStep] = useState(0)
   const [form, setForm] = useState(initialForm)
   const [error, setError] = useState('')
   const [requestState, setRequestState] = useState('idle')
+  // [추가] 휴대폰 인증 상태와 남은 시간
+  const [verification, setVerification] = useState(initialVerification)
+  const [timeLeft, setTimeLeft] = useState(0)
   const { signup } = useAuth()
   const navigate = useNavigate()
 
   const setField = (field, value) => setForm((current) => ({ ...current, [field]: value }))
   const progressStep = step <= 3 ? step + 1 : step >= 5 && step <= 10 ? step : null
+
+  // [추가] 인증번호 발송 후 1초마다 남은 시간 감소 (인증 완료 or 0초가 되면 멈춤)
+  useEffect(() => {
+    if (!verification.sent || verification.verified || timeLeft <= 0) return undefined
+    const timerId = setTimeout(() => setTimeLeft((current) => current - 1), 1000)
+    return () => clearTimeout(timerId)
+  }, [verification.sent, verification.verified, timeLeft])
+
+  // [추가] 번호가 바뀌면 인증을 처음부터 다시 받도록 초기화
+  const handlePhoneChange = (value) => {
+    setField('phone', value)
+    setVerification(initialVerification)
+    setTimeLeft(0)
+  }
+
+  // [추가] 인증번호 받기 / 재전송
+  const sendVerificationCode = async () => {
+    if (!isValidPhone(form.phone)) {
+      setError('올바른 휴대폰 번호를 입력해주세요.')
+      return
+    }
+    setError('')
+    setRequestState('sending-code')
+    try {
+      await authApi.sendPhoneCode({ phone: form.phone.replace(/\D/g, '') })
+      setVerification({ sent: true, code: '', verified: false })
+      setTimeLeft(VERIFY_TIME_LIMIT)
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, '인증번호 발송 중 문제가 발생했습니다.'))
+    } finally {
+      setRequestState('idle')
+    }
+  }
+
+  // [추가] 인증번호 확인
+  const verifyCode = async () => {
+    if (timeLeft <= 0) {
+      setError('인증 시간이 만료되었습니다. 인증번호를 다시 받아주세요.')
+      return
+    }
+    if (!/^\d{6}$/.test(verification.code)) {
+      setError('6자리 인증번호를 입력해주세요.')
+      return
+    }
+    setError('')
+    setRequestState('verifying-code')
+    try {
+      const { data } = await authApi.verifyPhoneCode({
+        phone: form.phone.replace(/\D/g, ''),
+        code: verification.code,
+      })
+      if (!data?.verified) {
+        setError('인증번호가 일치하지 않습니다.')
+        return
+      }
+      setVerification((current) => ({ ...current, verified: true }))
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, '인증번호 확인 중 문제가 발생했습니다.'))
+    } finally {
+      setRequestState('idle')
+    }
+  }
 
   const validateCurrentStep = () => {
     const requiredByStep = ['email', 'password', 'name', 'phone', null, 'region', 'industry', 'openingDate', 'businessType', 'employeeCount', 'annualRevenue']
@@ -66,6 +139,8 @@ function SignupPage() {
     }
     if (step === 1 && form.password !== form.passwordConfirm) return '비밀번호가 일치하지 않습니다.'
     if (step === 3 && !isValidPhone(form.phone)) return '올바른 휴대폰 번호를 입력해주세요.'
+    // [추가] 인증을 마쳐야 다음 단계로 이동
+    if (step === 3 && !verification.verified) return '휴대폰 인증을 완료해주세요.'
     return ''
   }
 
@@ -105,9 +180,23 @@ function SignupPage() {
     if (e.target.tagName === 'BUTTON') return // 버튼 위에서는 원래 동작대로
 
     e.preventDefault()
-    const inputs = [...e.currentTarget.querySelectorAll('input')]
-    const nextInput = inputs[inputs.indexOf(e.target) + 1]
+    // [수정] 비활성화된 칸(인증 완료된 인증번호 칸)은 건너뜀
+    const inputs = [...e.currentTarget.querySelectorAll('input:not(:disabled)')]
+    const index = inputs.indexOf(e.target)
 
+    // [추가] 휴대폰 단계: 번호 칸에서 엔터 → 인증번호 받기, 인증번호 칸에서 엔터 → 확인
+    if (step === 3 && !verification.verified) {
+      if (index === 0 && !verification.sent) {
+        sendVerificationCode()
+        return
+      }
+      if (index === 1) {
+        verifyCode()
+        return
+      }
+    }
+
+    const nextInput = inputs[index + 1]
     if (nextInput) nextInput.focus() // 같은 단계에 다음 칸이 있으면 이동 (비밀번호 → 비밀번호 확인)
     else goNext() // 마지막 칸이면 다음 단계로
   }
@@ -150,11 +239,56 @@ function SignupPage() {
     }
   }
 
+  // [추가] 휴대폰 번호 + 인증번호 입력 영역
+  const renderPhoneVerification = () => {
+    const rowStyle = { display: 'flex', gap: 8, alignItems: 'flex-end' }
+    const codeHelperText = verification.verified
+      ? '인증이 완료되었습니다.'
+      : timeLeft > 0
+        ? `남은 시간 ${formatTime(timeLeft)}`
+        : '인증 시간이 만료되었습니다. 인증번호를 다시 받아주세요.'
+
+    return (
+      <div className="stack">
+        <div style={rowStyle}>
+          <div style={{ flex: 1 }}>
+            <Input label="휴대폰 번호" type="tel" value={form.phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="010-1234-5678" autoFocus />
+          </div>
+          <Button variant="secondary" onClick={sendVerificationCode} disabled={requestState !== 'idle' || verification.verified}>
+            {requestState === 'sending-code' ? '발송 중...' : verification.sent ? '재전송' : '인증번호 받기'}
+          </Button>
+        </div>
+
+        {verification.sent && (
+          <div style={rowStyle}>
+            <div style={{ flex: 1 }}>
+              <Input
+                label="인증번호"
+                inputMode="numeric"
+                maxLength={6}
+                value={verification.code}
+                onChange={(e) => setVerification((current) => ({ ...current, code: e.target.value.replace(/\D/g, '') }))}
+                placeholder="6자리 숫자"
+                helperText={codeHelperText}
+                disabled={verification.verified}
+                autoFocus
+              />
+            </div>
+            <Button variant="secondary" onClick={verifyCode} disabled={requestState !== 'idle' || verification.verified || timeLeft <= 0}>
+              {requestState === 'verifying-code' ? '확인 중...' : verification.verified ? '인증 완료' : '확인'}
+            </Button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const renderField = () => {
     if (step === 0) return <Input label="이메일" type="email" value={form.email} onChange={(e) => setField('email', e.target.value)} placeholder="example@email.com" autoFocus />
     if (step === 1) return <div className="stack"><Input label="비밀번호" type="password" value={form.password} onChange={(e) => setField('password', e.target.value)} placeholder="비밀번호를 입력해주세요" autoFocus /><Input label="비밀번호 확인" type="password" value={form.passwordConfirm} onChange={(e) => setField('passwordConfirm', e.target.value)} placeholder="비밀번호를 다시 입력해주세요" /></div>
     if (step === 2) return <Input label="이름" value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="홍길동" autoFocus />
-    if (step === 3) return <Input label="휴대폰 번호" type="tel" value={form.phone} onChange={(e) => setField('phone', e.target.value)} placeholder="010-1234-5678" autoFocus />
+    // [수정] 휴대폰 번호 단계에 인증번호 입력란 추가
+    if (step === 3) return renderPhoneVerification()
     if (step === 5) return <Input label="주요 사업장 소재지" value={form.region} onChange={(e) => setField('region', e.target.value)} placeholder="서울특별시 강남구" autoFocus />
     if (step === 6) return <><Input label="주업종 또는 분류 코드" value={form.industry} onChange={(e) => setField('industry', e.target.value)} placeholder="온라인 소매업" autoFocus /><div className="signup-suggestions"><span>주요 추천 분야</span>{['제조업', '정보통신업', '도소매업', '전문 서비스업'].map((item) => <button type="button" key={item} onClick={() => setField('industry', item)}>{item}</button>)}</div></>
     if (step === 7) return <Input label="개업연월일" type="date" value={form.openingDate} onChange={(e) => setField('openingDate', e.target.value)} autoFocus />
