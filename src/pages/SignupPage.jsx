@@ -70,6 +70,19 @@ function SignupPage() {
     setStep((current) => Math.min(current + 1, stepCopy.length - 1))
   }
 
+  // [추가] 엔터 키로 다음 입력칸 / 다음 단계로 이동
+  const handleEnter = (e) => {
+    if (e.key !== 'Enter' || e.nativeEvent.isComposing) return // 한글 조합 중이면 무시
+    if (e.target.tagName === 'BUTTON') return // 버튼 위에서는 원래 동작대로
+
+    e.preventDefault()
+    const inputs = [...e.currentTarget.querySelectorAll('input')]
+    const nextInput = inputs[inputs.indexOf(e.target) + 1]
+
+    if (nextInput) nextInput.focus() // 같은 단계에 다음 칸이 있으면 이동 (비밀번호 → 비밀번호 확인)
+    else goNext() // 마지막 칸이면 다음 단계로
+  }
+
   const finishSignup = (includeBusiness = true) => {
     // 현재는 실제 회원가입 API 대신 Mock 사용자 정보를 저장합니다.
     completeSignup({
@@ -141,7 +154,8 @@ function SignupPage() {
     <main className="signup-page">
       <Link className="brand signup-brand" to={ROUTES.LOGIN}><img className="brand__logo" src={supportUpLogo} alt="" />지원UP</Link>
       <SignupStepCard current={progressStep} total={10} title={stepCopy[step][0]} description={stepCopy[step][1]}>
-        <div className="signup-card__body">{renderField()}{error && <p className="form-error" role="alert">{error}</p>}</div>
+        {/* [수정] onKeyDown={handleEnter} 추가 */}
+        <div className="signup-card__body" onKeyDown={handleEnter}>{renderField()}{error && <p className="form-error" role="alert">{error}</p>}</div>
         <div className="signup-actions">
           <Button
             variant="secondary"

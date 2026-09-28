@@ -9,17 +9,51 @@ import { ROUTES } from '../constants/routes'
 import { authMockService } from '../services/authMockService'
 import { isValidPhone } from '../utils/authUtils'
 
-const initialForm = { name: '', phone: '' }
+// [추가] 실제 문자 발송 API가 생기기 전까지 사용할 테스트 인증번호
+const MOCK_VERIFICATION_CODE = '123456'
+
+const initialForm = { name: '', phone: '', code: '' } // [수정] code 추가
 
 function FindIdPage() {
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState({})
   const [status, setStatus] = useState('form')
   const [maskedId, setMaskedId] = useState('')
+  const [isCodeSent, setIsCodeSent] = useState(false) // [추가] 인증번호 발송 여부
+  const [isVerified, setIsVerified] = useState(false) // [추가] 인증 완료 여부
 
   const setField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: '' }))
+
+    // [추가] 인증 후 휴대폰 번호를 바꾸면 인증을 처음부터 다시 받게 함
+    if (field === 'phone') {
+      setIsCodeSent(false)
+      setIsVerified(false)
+      setForm((current) => ({ ...current, code: '' }))
+    }
+  }
+
+  // [추가] 인증번호 받기
+  const sendCode = () => {
+    const phone = form.phone.trim()
+    if (!phone) return setErrors((current) => ({ ...current, phone: '휴대폰 번호를 입력해주세요.' }))
+    if (!isValidPhone(phone)) return setErrors((current) => ({ ...current, phone: '올바른 휴대폰 번호를 입력해주세요.' }))
+
+    // 현재는 Mock: 실제 문자 발송 대신 발송된 것으로 처리합니다.
+    setIsCodeSent(true)
+    setIsVerified(false)
+    setForm((current) => ({ ...current, code: '' }))
+    setErrors((current) => ({ ...current, phone: '', code: '' }))
+  }
+
+  // [추가] 인증번호 확인
+  const verifyCode = () => {
+    if (!form.code.trim()) return setErrors((current) => ({ ...current, code: '인증번호를 입력해주세요.' }))
+    if (form.code.trim() !== MOCK_VERIFICATION_CODE) return setErrors((current) => ({ ...current, code: '인증번호가 일치하지 않습니다.' }))
+
+    setIsVerified(true)
+    setErrors((current) => ({ ...current, code: '' }))
   }
 
   const validate = () => {
@@ -30,6 +64,7 @@ function FindIdPage() {
     if (!name) nextErrors.name = '이름을 입력해주세요.'
     if (!phone) nextErrors.phone = '휴대폰 번호를 입력해주세요.'
     else if (!isValidPhone(phone)) nextErrors.phone = '올바른 휴대폰 번호를 입력해주세요.'
+    else if (!isVerified) nextErrors.code = '휴대폰 인증을 완료해주세요.' // [추가]
 
     setErrors(nextErrors)
     return { valid: Object.keys(nextErrors).length === 0, name, phone }
@@ -37,13 +72,20 @@ function FindIdPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+
+    // [추가] 인증번호 칸에서 엔터를 치면 아이디 찾기 대신 인증번호 확인
+    if (isCodeSent && !isVerified && form.code.trim()) {
+      verifyCode()
+      return
+    }
+
     const values = validate()
     if (!values.valid) return
 
     setStatus('loading')
 
     try {
-      const result = await authMockService.findId(values)
+      const result = await authMockService.findId({ name: values.name, phone: values.phone })
       if (!result.found) {
         setStatus('not-found')
         return
@@ -99,15 +141,46 @@ function FindIdPage() {
                   placeholder="홍길동"
                   error={errors.name}
                 />
-                <Input
-                  label="휴대폰 번호"
-                  type="tel"
-                  value={form.phone}
-                  onChange={(event) => setField('phone', event.target.value)}
-                  autoComplete="tel"
-                  placeholder="010-1234-5678"
-                  error={errors.phone}
-                />
+
+                {/* [수정] 휴대폰 번호 + 인증번호 받기 버튼을 한 줄에 배치 */}
+                <div className="auth-inline-field">
+                  <Input
+                    label="휴대폰 번호"
+                    type="tel"
+                    value={form.phone}
+                    onChange={(event) => setField('phone', event.target.value)}
+                    autoComplete="tel"
+                    placeholder="010-1234-5678"
+                    error={errors.phone}
+                  />
+                  <Button type="button" variant="secondary" onClick={sendCode} disabled={isVerified}>
+                    {isCodeSent ? '재발송' : '인증번호 받기'}
+                  </Button>
+                </div>
+
+                {/* [추가] 인증번호 받기를 누른 뒤에만 보이는 인증번호 입력칸 */}
+                {isCodeSent && (
+                  <div className="auth-inline-field">
+                    <Input
+                      label="인증번호"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={form.code}
+                      onChange={(event) => setField('code', event.target.value.replace(/\D/g, ''))}
+                      autoComplete="one-time-code"
+                      placeholder="인증번호 6자리"
+                      disabled={isVerified}
+                      error={errors.code}
+                      helperText={isVerified ? '휴대폰 인증이 완료되었습니다.' : `인증번호가 발송되었습니다. (테스트용: ${MOCK_VERIFICATION_CODE})`}
+                    />
+                    <Button type="button" variant="secondary" onClick={verifyCode} disabled={isVerified}>
+                      {isVerified ? '인증 완료' : '확인'}
+                    </Button>
+                  </div>
+                )}
+
+                {/* [추가] 인증번호를 받기 전에 아이디 찾기를 누르면 안내 */}
+                {!isCodeSent && errors.code && <p className="form-error" role="alert">{errors.code}</p>}
               </div>
               <Button type="submit" size="large" disabled={status === 'loading'}>
                 {status === 'loading' ? '아이디 찾는 중...' : '아이디 찾기'}
