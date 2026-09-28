@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { authApi } from '../api/authApi'
 import supportUpLogo from '../assets/support-up-logo.png'
 import Button from '../components/common/Button'
 import Card from '../components/common/Card'
@@ -7,10 +8,7 @@ import ErrorMessage from '../components/common/ErrorMessage'
 import Input from '../components/common/Input'
 import { ROUTES } from '../constants/routes'
 import { authMockService } from '../services/authMockService'
-import { isValidPhone } from '../utils/authUtils'
-
-// [추가] 실제 문자 발송 API가 생기기 전까지 사용할 테스트 인증번호
-const MOCK_VERIFICATION_CODE = '123456'
+import { getApiErrorMessage, isValidPhone } from '../utils/authUtils'
 
 const initialForm = { name: '', phone: '', code: '' } // [수정] code 추가
 
@@ -21,6 +19,7 @@ function FindIdPage() {
   const [maskedId, setMaskedId] = useState('')
   const [isCodeSent, setIsCodeSent] = useState(false) // [추가] 인증번호 발송 여부
   const [isVerified, setIsVerified] = useState(false) // [추가] 인증 완료 여부
+  const [verificationState, setVerificationState] = useState('idle')
 
   const setField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -35,25 +34,55 @@ function FindIdPage() {
   }
 
   // [추가] 인증번호 받기
-  const sendCode = () => {
+  const sendCode = async () => {
     const phone = form.phone.trim()
     if (!phone) return setErrors((current) => ({ ...current, phone: '휴대폰 번호를 입력해주세요.' }))
     if (!isValidPhone(phone)) return setErrors((current) => ({ ...current, phone: '올바른 휴대폰 번호를 입력해주세요.' }))
 
-    // 현재는 Mock: 실제 문자 발송 대신 발송된 것으로 처리합니다.
-    setIsCodeSent(true)
-    setIsVerified(false)
-    setForm((current) => ({ ...current, code: '' }))
+    setVerificationState('sending')
     setErrors((current) => ({ ...current, phone: '', code: '' }))
+
+    try {
+      await authApi.sendPhoneVerification(phone.replace(/\D/g, ''))
+      setIsCodeSent(true)
+      setIsVerified(false)
+      setForm((current) => ({ ...current, code: '' }))
+    } catch (requestError) {
+      setErrors((current) => ({
+        ...current,
+        phone: getApiErrorMessage(requestError, '인증번호 발송 중 문제가 발생했습니다.'),
+      }))
+    } finally {
+      setVerificationState('idle')
+    }
   }
 
   // [추가] 인증번호 확인
-  const verifyCode = () => {
+  const verifyCode = async () => {
     if (!form.code.trim()) return setErrors((current) => ({ ...current, code: '인증번호를 입력해주세요.' }))
-    if (form.code.trim() !== MOCK_VERIFICATION_CODE) return setErrors((current) => ({ ...current, code: '인증번호가 일치하지 않습니다.' }))
+    if (!/^\d{6}$/.test(form.code.trim())) return setErrors((current) => ({ ...current, code: '6자리 인증번호를 입력해주세요.' }))
 
-    setIsVerified(true)
     setErrors((current) => ({ ...current, code: '' }))
+    setVerificationState('verifying')
+
+    try {
+      const { data } = await authApi.verifyPhoneVerification(
+        form.phone.replace(/\D/g, ''),
+        form.code.trim(),
+      )
+      if (!data?.isVerified) {
+        setErrors((current) => ({ ...current, code: '인증번호가 일치하지 않습니다.' }))
+        return
+      }
+      setIsVerified(true)
+    } catch (requestError) {
+      setErrors((current) => ({
+        ...current,
+        code: getApiErrorMessage(requestError, '인증번호 확인 중 문제가 발생했습니다.'),
+      }))
+    } finally {
+      setVerificationState('idle')
+    }
   }
 
   const validate = () => {
@@ -153,8 +182,8 @@ function FindIdPage() {
                     placeholder="010-1234-5678"
                     error={errors.phone}
                   />
-                  <Button type="button" variant="secondary" onClick={sendCode} disabled={isVerified}>
-                    {isCodeSent ? '재발송' : '인증번호 받기'}
+                  <Button type="button" variant="secondary" onClick={sendCode} disabled={isVerified || verificationState !== 'idle'}>
+                    {verificationState === 'sending' ? '발송 중...' : isCodeSent ? '재발송' : '인증번호 받기'}
                   </Button>
                 </div>
 
@@ -171,10 +200,10 @@ function FindIdPage() {
                       placeholder="인증번호 6자리"
                       disabled={isVerified}
                       error={errors.code}
-                      helperText={isVerified ? '휴대폰 인증이 완료되었습니다.' : `인증번호가 발송되었습니다. (테스트용: ${MOCK_VERIFICATION_CODE})`}
+                      helperText={isVerified ? '휴대폰 인증이 완료되었습니다.' : '입력하신 휴대폰 번호로 인증번호가 발송되었습니다.'}
                     />
-                    <Button type="button" variant="secondary" onClick={verifyCode} disabled={isVerified}>
-                      {isVerified ? '인증 완료' : '확인'}
+                    <Button type="button" variant="secondary" onClick={verifyCode} disabled={isVerified || verificationState !== 'idle'}>
+                      {verificationState === 'verifying' ? '확인 중...' : isVerified ? '인증 완료' : '확인'}
                     </Button>
                   </div>
                 )}

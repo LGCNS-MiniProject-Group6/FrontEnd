@@ -89,7 +89,7 @@ function SignupPage() {
     setError('')
     setRequestState('sending-code')
     try {
-      await authApi.sendPhoneCode({ phone: form.phone.replace(/\D/g, '') })
+      await authApi.sendPhoneVerification(form.phone.replace(/\D/g, ''))
       setVerification({ sent: true, code: '', verified: false })
       setTimeLeft(VERIFY_TIME_LIMIT)
     } catch (requestError) {
@@ -112,11 +112,11 @@ function SignupPage() {
     setError('')
     setRequestState('verifying-code')
     try {
-      const { data } = await authApi.verifyPhoneCode({
-        phone: form.phone.replace(/\D/g, ''),
-        code: verification.code,
-      })
-      if (!data?.verified) {
+      const { data } = await authApi.verifyPhoneVerification(
+        form.phone.replace(/\D/g, ''),
+        verification.code,
+      )
+      if (!data?.isVerified) {
         setError('인증번호가 일치하지 않습니다.')
         return
       }
