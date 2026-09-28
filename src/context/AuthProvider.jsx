@@ -1,43 +1,86 @@
-import { useEffect, useMemo, useState } from 'react'
-import { userMock } from '../mocks/userMock'
+import { useCallback, useMemo, useState } from 'react'
+import { authApi } from '../api/authApi'
 import { AuthContext } from './authContext'
 
 const STORAGE_KEY = 'support-check-auth'
 
 export function AuthProvider({ children }) {
-  // 새로고침 후에도 화면의 임시 로그인 상태를 유지합니다.
   const [auth, setAuth] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? null
+      const storedAuth = JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? null
+      if (storedAuth?.accessToken?.startsWith('mock-')) {
+        localStorage.removeItem(STORAGE_KEY)
+        return null
+      }
+      return storedAuth
     } catch {
+      localStorage.removeItem(STORAGE_KEY)
       return null
     }
   })
 
-  useEffect(() => {
-    if (auth) localStorage.setItem(STORAGE_KEY, JSON.stringify(auth))
+  const saveAuth = useCallback((nextAuth) => {
+    setAuth(nextAuth)
+    if (nextAuth) localStorage.setItem(STORAGE_KEY, JSON.stringify(nextAuth))
     else localStorage.removeItem(STORAGE_KEY)
-  }, [auth])
+  }, [])
+
+  const login = useCallback(async ({ email, password }, userOverrides = {}) => {
+    const { data: tokens } = await authApi.login({ email, password })
+
+    if (!tokens?.accessToken || !tokens?.refreshToken) {
+      throw new Error('로그인 응답에 인증 토큰이 없습니다.')
+    }
+
+    const tokenAuth = {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      tokenType: tokens.tokenType || 'Bearer',
+      accessTokenExpiresIn: tokens.accessTokenExpiresIn,
+      refreshTokenExpiresIn: tokens.refreshTokenExpiresIn,
+    }
+
+    // 사용자 조회 요청에 Access Token이 즉시 사용되도록 먼저 저장합니다.
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tokenAuth))
+
+    try {
+      const { data: profile } = await authApi.getMyInfo()
+      const nextAuth = {
+        ...tokenAuth,
+        user: { ...profile, ...userOverrides },
+      }
+      saveAuth(nextAuth)
+      return nextAuth
+    } catch (error) {
+      saveAuth(null)
+      throw error
+    }
+  }, [saveAuth])
+
+  const signup = useCallback(async (payload) => {
+    const { data: signupResult } = await authApi.signup(payload)
+    return signupResult
+  }, [])
+
+  const logout = useCallback(async () => {
+    try {
+      if (auth?.refreshToken) {
+        await authApi.logout({ refreshToken: auth.refreshToken })
+      }
+    } finally {
+      saveAuth(null)
+    }
+  }, [auth?.refreshToken, saveAuth])
 
   const value = useMemo(
     () => ({
       isAuthenticated: Boolean(auth?.accessToken),
       user: auth?.user ?? null,
-      login: ({ email }) => {
-        setAuth({
-          accessToken: 'mock-access-token',
-          user: { ...userMock, email: email || userMock.email },
-        })
-      },
-      completeSignup: (profile) => {
-        setAuth({
-          accessToken: 'mock-signup-token',
-          user: { ...userMock, ...profile },
-        })
-      },
-      logout: () => setAuth(null),
+      login,
+      signup,
+      logout,
     }),
-    [auth],
+    [auth, login, logout, signup],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

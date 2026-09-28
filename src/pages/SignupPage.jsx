@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { authApi } from '../api/authApi'
 import supportUpLogo from '../assets/support-up-logo.png'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import SignupStepCard from '../components/signup/SignupStepCard'
 import { ROUTES } from '../constants/routes'
 import { useAuth } from '../hooks/useAuth'
-import { getPasswordValidationError } from '../utils/authUtils'
+import {
+  getApiErrorMessage,
+  getPasswordValidationError,
+  isValidEmail,
+  isValidPhone,
+} from '../utils/authUtils'
 import { formatCurrency } from '../utils/formatUtils'
 
 const initialForm = {
@@ -25,7 +31,7 @@ const initialForm = {
 
 const stepCopy = [
   ['이메일 입력', '회원가입에 사용할 이메일을 입력해주세요.'],
-  ['비밀번호 설정', '영문과 숫자를 포함한 8자 이상의 비밀번호를 설정해주세요.'],
+  ['비밀번호 설정', '영문, 숫자, 특수문자를 포함한 8자 이상의 비밀번호를 설정해주세요.'],
   ['이름 입력', '서비스 이용 시 표시될 이름을 입력해주세요.'],
   ['휴대폰 번호 입력', '맞춤 지원 정보 안내를 받을 휴대폰 번호를 입력해주세요.'],
   ['기본정보 입력 완료', '이제 사업정보를 입력하면 맞춤 공고와 AI 검수를 더 정확하게 이용할 수 있어요.'],
@@ -42,7 +48,8 @@ function SignupPage() {
   const [step, setStep] = useState(0)
   const [form, setForm] = useState(initialForm)
   const [error, setError] = useState('')
-  const { completeSignup } = useAuth()
+  const [requestState, setRequestState] = useState('idle')
+  const { signup } = useAuth()
   const navigate = useNavigate()
 
   const setField = (field, value) => setForm((current) => ({ ...current, [field]: value }))
@@ -52,42 +59,86 @@ function SignupPage() {
     const requiredByStep = ['email', 'password', 'name', 'phone', null, 'region', 'industry', 'openingDate', 'businessType', 'employeeCount', 'annualRevenue']
     const field = requiredByStep[step]
     if (field && form[field] === '') return '필수 정보를 입력해주세요.'
+    if (step === 0 && !isValidEmail(form.email)) return '올바른 이메일 형식을 입력해주세요.'
     if (step === 1) {
       const passwordError = getPasswordValidationError(form.password)
       if (passwordError) return passwordError
     }
     if (step === 1 && form.password !== form.passwordConfirm) return '비밀번호가 일치하지 않습니다.'
+    if (step === 3 && !isValidPhone(form.phone)) return '올바른 휴대폰 번호를 입력해주세요.'
     return ''
   }
 
-  const goNext = () => {
+  const goNext = async () => {
     const validationError = validateCurrentStep()
     if (validationError) {
       setError(validationError)
       return
     }
     setError('')
+
+    if (step === 0) {
+      setRequestState('checking-email')
+      try {
+        const { data } = await authApi.checkEmail({ email: form.email.trim() })
+        if (!data?.available) {
+          setError('이미 가입된 이메일입니다.')
+          return
+        }
+      } catch (requestError) {
+        setError(getApiErrorMessage(
+          requestError,
+          '이메일 중복확인 중 문제가 발생했습니다.',
+        ))
+        return
+      } finally {
+        setRequestState('idle')
+      }
+    }
+
     setStep((current) => Math.min(current + 1, stepCopy.length - 1))
   }
 
-  const finishSignup = (includeBusiness = true) => {
-    // 현재는 실제 회원가입 API 대신 Mock 사용자 정보를 저장합니다.
-    completeSignup({
-      name: form.name || '박운영',
-      email: form.email,
-      phone: form.phone,
-      ...(includeBusiness && {
-        business: {
+  const finishSignup = async (includeBusiness = true) => {
+    if (requestState !== 'idle') return
+
+    setError('')
+    setRequestState('signing-up')
+
+    const business = includeBusiness
+      ? {
           region: form.region,
           industry: form.industry,
           openingDate: form.openingDate,
           businessType: form.businessType,
           employeeCount: Number(form.employeeCount),
           annualRevenue: Number(form.annualRevenue),
+        }
+      : undefined
+
+    try {
+      await signup({
+        email: form.email.trim(),
+        password: form.password,
+        name: form.name.trim(),
+        phone: form.phone.replace(/\D/g, ''),
+      })
+      navigate(ROUTES.LOGIN, {
+        replace: true,
+        state: {
+          signupSuccess: true,
+          email: form.email.trim(),
+          business,
         },
-      }),
-    })
-    navigate(ROUTES.HOME)
+      })
+    } catch (requestError) {
+      setError(getApiErrorMessage(
+        requestError,
+        '회원가입 중 문제가 발생했습니다. 입력 정보를 확인해주세요.',
+      ))
+    } finally {
+      setRequestState('idle')
+    }
   }
 
   const renderField = () => {
@@ -110,9 +161,12 @@ function SignupPage() {
         <Link className="brand signup-brand" to={ROUTES.LOGIN}><img className="brand__logo" src={supportUpLogo} alt="" />지원UP</Link>
         <SignupStepCard title={stepCopy[step][0]} description={stepCopy[step][1]}>
           <div className="signup-complete-icon" aria-hidden="true">✓</div>
+          {error && <p className="form-error" role="alert">{error}</p>}
           <div className="signup-actions signup-actions--stacked">
-            <Button size="large" onClick={goNext}>사업정보 입력 시작하기</Button>
-            <Button variant="secondary" onClick={() => finishSignup(false)}>나중에 작성하기</Button>
+            <Button size="large" onClick={goNext} disabled={requestState !== 'idle'}>사업정보 입력 시작하기</Button>
+            <Button variant="secondary" onClick={() => finishSignup(false)} disabled={requestState !== 'idle'}>
+              {requestState === 'signing-up' ? '가입 처리 중...' : '나중에 작성하기'}
+            </Button>
           </div>
         </SignupStepCard>
       </main>
@@ -131,7 +185,8 @@ function SignupPage() {
         <Link className="brand signup-brand" to={ROUTES.LOGIN}><img className="brand__logo" src={supportUpLogo} alt="" />지원UP</Link>
         <SignupStepCard title={stepCopy[step][0]} description={stepCopy[step][1]}>
           <dl className="signup-summary">{summary.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
-          <div className="signup-actions"><Button variant="secondary" onClick={() => setStep(10)}>수정하기</Button><Button onClick={() => finishSignup(true)}>가입 완료하고 시작하기</Button></div>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <div className="signup-actions"><Button variant="secondary" onClick={() => setStep(10)} disabled={requestState !== 'idle'}>수정하기</Button><Button onClick={() => finishSignup(true)} disabled={requestState !== 'idle'}>{requestState === 'signing-up' ? '가입 처리 중...' : '가입 완료하고 시작하기'}</Button></div>
         </SignupStepCard>
       </main>
     )
@@ -145,6 +200,7 @@ function SignupPage() {
         <div className="signup-actions">
           <Button
             variant="secondary"
+            disabled={requestState !== 'idle'}
             onClick={() =>
               step === 0
                 ? navigate(ROUTES.LOGIN)
@@ -153,7 +209,9 @@ function SignupPage() {
           >
             {step === 0 ? '로그인으로' : '이전'}
           </Button>
-          <Button onClick={goNext}>다음</Button>
+          <Button onClick={goNext} disabled={requestState !== 'idle'}>
+            {requestState === 'checking-email' ? '확인 중...' : '다음'}
+          </Button>
         </div>
       </SignupStepCard>
     </main>

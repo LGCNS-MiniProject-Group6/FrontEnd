@@ -5,23 +5,46 @@ import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import { ROUTES } from '../constants/routes'
 import { useAuth } from '../hooks/useAuth'
+import { getApiErrorMessage } from '../utils/authUtils'
 
 function LoginPage() {
-  const [form, setForm] = useState({ email: 'operator@example.com', password: 'password123' })
-  const [error, setError] = useState('')
-  const { login } = useAuth()
   const location = useLocation()
+  const [form, setForm] = useState({
+    email: location.state?.email || '',
+    password: '',
+  })
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     if (!form.email || !form.password) {
       setError('이메일과 비밀번호를 모두 입력해주세요.')
       return
     }
-    login(form)
-    const destination = location.state?.from?.pathname || ROUTES.HOME
-    navigate(destination, { replace: true })
+    setError('')
+    setIsSubmitting(true)
+
+    try {
+      await login(
+        {
+          email: form.email.trim(),
+          password: form.password,
+        },
+        location.state?.business ? { business: location.state.business } : {},
+      )
+      const destination = location.state?.from?.pathname || ROUTES.HOME
+      navigate(destination, { replace: true })
+    } catch (requestError) {
+      setError(getApiErrorMessage(
+        requestError,
+        '이메일 또는 비밀번호를 확인해주세요.',
+      ))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -47,26 +70,41 @@ function LoginPage() {
           <span className="eyebrow">다시 만나 반가워요</span>
           <h2>로그인</h2>
           <p>정부지원사업 AI 신청 도우미를 시작해보세요.</p>
+          {location.state?.signupSuccess && (
+            <div className="auth-notice" role="status">
+              회원가입이 완료되었습니다. 가입한 계정으로 로그인해주세요.
+            </div>
+          )}
           <div className="login-card__fields">
             <Input
               label="이메일"
               type="email"
               autoComplete="email"
               value={form.email}
-              onChange={(event) => setForm({ ...form, email: event.target.value })}
+              onChange={(event) => {
+                setForm({ ...form, email: event.target.value })
+                setError('')
+              }}
               placeholder="example@email.com"
+              disabled={isSubmitting}
             />
             <Input
               label="비밀번호"
               type="password"
               autoComplete="current-password"
               value={form.password}
-              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              onChange={(event) => {
+                setForm({ ...form, password: event.target.value })
+                setError('')
+              }}
               placeholder="비밀번호를 입력해주세요"
+              disabled={isSubmitting}
             />
             {error && <p className="form-error" role="alert">{error}</p>}
           </div>
-          <Button type="submit" size="large">로그인</Button>
+          <Button type="submit" size="large" disabled={isSubmitting}>
+            {isSubmitting ? '로그인 중...' : '로그인'}
+          </Button>
           <nav className="login-card__recovery" aria-label="계정 찾기">
             <Link to={ROUTES.FIND_ID}>아이디 찾기</Link>
             <span aria-hidden="true">|</span>
