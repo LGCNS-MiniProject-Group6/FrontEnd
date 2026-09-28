@@ -260,23 +260,25 @@ function SignupPage() {
         </div>
 
         {verification.sent && (
-          <div style={rowStyle}>
-            <div style={{ flex: 1 }}>
-              <Input
-                label="인증번호"
-                inputMode="numeric"
-                maxLength={6}
-                value={verification.code}
-                onChange={(e) => setVerification((current) => ({ ...current, code: e.target.value.replace(/\D/g, '') }))}
-                placeholder="6자리 숫자"
-                helperText={codeHelperText}
-                disabled={verification.verified}
-                autoFocus
-              />
+          <div className="field">
+            <div style={rowStyle}>
+              <div style={{ flex: 1 }}>
+                <Input
+                  label="인증번호"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={verification.code}
+                  onChange={(e) => setVerification((current) => ({ ...current, code: e.target.value.replace(/\D/g, '') }))}
+                  placeholder="6자리 숫자"
+                  disabled={verification.verified}
+                  autoFocus
+                />
+              </div>
+              <Button variant="secondary" onClick={verifyCode} disabled={requestState !== 'idle' || verification.verified || timeLeft <= 0}>
+                {requestState === 'verifying-code' ? '확인 중...' : verification.verified ? '인증 완료' : '확인'}
+              </Button>
             </div>
-            <Button variant="secondary" onClick={verifyCode} disabled={requestState !== 'idle' || verification.verified || timeLeft <= 0}>
-              {requestState === 'verifying-code' ? '확인 중...' : verification.verified ? '인증 완료' : '확인'}
-            </Button>
+            <p className="field__message" role="status">{codeHelperText}</p>
           </div>
         )}
       </div>
