@@ -1,4 +1,4 @@
-const filters = ['전체', '창업', '경영', '마케팅', '온라인 판로', '시설', '교육', '금융', '수출']
+const filters = ['전체', '금융', '기술', '인력', '수출', '내수', '창업', '경영', '기타']
 
 function ProgramFilter({ selected, onSelect, compact = false }) {
   return (
