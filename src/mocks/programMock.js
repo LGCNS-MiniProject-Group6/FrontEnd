@@ -12,6 +12,16 @@ export const programMocks = [
     method: '사업 신청 시스템을 통한 온라인 접수',
     documents: '사업자등록증, 최근 매출 증빙자료, 지원 신청서',
     originalUrl: 'https://www.bizinfo.go.kr',
+    pblancUrl: 'https://www.bizinfo.go.kr',
+    aiSummary: {
+      bizSummary: '온라인 판매채널 입점, 콘텐츠 제작 및 온라인 홍보 비용 등을 지원하여 소상공인의 온라인 판로 개척을 돕습니다.',
+      targetDescription: '온라인 판매 확대를 희망하는 전국 소상공인',
+      supportContent: '온라인 입점 지원, 광고비 지원 (최대 300만원), 상세페이지 제작 지원',
+      applyMethod: '소상공인마당 온라인 신청 시스템을 통한 접수',
+      requiredDocuments: '사업자등록증명원, 부가가치세 과세표준증명, 통장사본',
+      contactInfo: '소상공인시장진흥공단 콜센터 (1357)',
+      updatedAt: '2026-09-29T10:00:00',
+    },
   },
   {
     pblancId: 'seoul-2026',
@@ -26,6 +36,7 @@ export const programMocks = [
     method: '온라인 신청 후 증빙서류 제출',
     documents: '사업자등록증, 임대차계약서, 견적서',
     originalUrl: 'https://www.bizinfo.go.kr',
+    pblancUrl: 'https://www.bizinfo.go.kr',
   },
   {
     pblancId: 'digital-2026',
@@ -40,6 +51,7 @@ export const programMocks = [
     method: '상시 온라인 접수',
     documents: '사업자등록증, 도입 계획서',
     originalUrl: 'https://www.bizinfo.go.kr',
+    pblancUrl: 'https://www.bizinfo.go.kr',
   },
   {
     pblancId: 'marketing-2026',
@@ -54,6 +66,7 @@ export const programMocks = [
     method: '온라인 접수',
     documents: '사업자등록증, 신청서',
     originalUrl: 'https://www.bizinfo.go.kr',
+    pblancUrl: 'https://www.bizinfo.go.kr',
   },
 ]
 

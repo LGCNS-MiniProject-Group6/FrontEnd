@@ -5,7 +5,8 @@ import {
   writeStoredAuth,
 } from '../utils/authStorage'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://192.168.219.52:8000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+console.log('test API_ BASE_URL : ' + API_BASE_URL);
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,

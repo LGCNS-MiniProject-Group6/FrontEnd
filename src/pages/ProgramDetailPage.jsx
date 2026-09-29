@@ -29,10 +29,14 @@ function ProgramDetailPage() {
       favoriteApi.getFavorites().catch(() => ({ data: [] })),
     ]).then(([{ data }, { data: favorites }]) => {
       if (!active) return
-      setProgram(normalizeProgram(data))
+      console.log('[ProgramDetailPage] program API raw data:', data)
+      const normalized = normalizeProgram(data)
+      console.log('[ProgramDetailPage] normalized program:', normalized)
+      setProgram(normalized)
       setFavorite((Array.isArray(favorites) ? favorites : []).some((item) => item.pblancId === pblancId))
       setProgramState('success')
-    }).catch(() => {
+    }).catch((err) => {
+      console.error('[ProgramDetailPage] API error:', err)
       if (active) setProgramState('error')
     })
 
@@ -78,11 +82,20 @@ function ProgramDetailPage() {
     )
   }
 
-  const details = [
-    ['지원대상', program.target || '지원대상 정보가 없습니다.'],
-    ['지원내용', program.summary || '지원내용 정보가 없습니다.'],
-    ['공고 정보 갱신일', program.apiUpdatedAt || '갱신일 정보가 없습니다.'],
-  ]
+  const details = program?.aiSummary
+    ? [
+      ['사업개요', program.aiSummary?.bizSummary || '사업개요 정보가 없습니다.'],
+      ['지원대상', program.aiSummary?.targetDescription || program.target || '지원대상 정보가 없습니다.'],
+      ['지원내용', program.aiSummary?.supportContent || program.summary || '지원내용 정보가 없습니다.'],
+      ['신청방법', program.aiSummary?.applyMethod || '신청방법 정보가 없습니다.'],
+      ['준비서류', program.aiSummary?.requiredDocuments || '준비서류 정보가 없습니다.'],
+      ['문의처', program.aiSummary?.contactInfo || '문의처 정보가 없습니다.'],
+    ]
+    : [
+      ['지원대상', program?.target || '지원대상 정보가 없습니다.'],
+      ['지원내용', program?.summary || '지원내용 정보가 없습니다.'],
+      ['공고 정보 갱신일', program?.apiUpdatedAt || '갱신일 정보가 없습니다.'],
+    ]
 
   return (
     <AppLayout>
@@ -130,9 +143,23 @@ function ProgramDetailPage() {
           ))}
         </div>
         <Card className="detail-helper">
-          <span className="eyebrow">Backend 제공 정보</span>
-          <h2>공고 안내</h2>
-          <p>현재 상세 API에는 원문 URL과 준비서류, 신청방법이 포함되어 있지 않습니다.</p>
+          <span className="eyebrow">공고 원문 및 신청</span>
+          <h2>공고 원문 안내</h2>
+          <p>
+            {program.pblancUrl
+              ? '주관기관 공식 사이트에서 원문 공고 확인 및 사업 신청이 가능합니다.'
+              : '현재 공식 공고 링크가 등록되어 있지 않습니다.'}
+          </p>
+          {program.pblancUrl && (
+            <a
+              href={program.pblancUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="button button--primary"
+            >
+              공고 원문 보러가기 / 신청하기 <span aria-hidden="true">↗</span>
+            </a>
+          )}
         </Card>
       </div>
     </AppLayout>
