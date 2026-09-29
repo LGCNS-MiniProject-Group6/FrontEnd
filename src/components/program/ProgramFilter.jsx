@@ -1,9 +1,9 @@
-const filters = ['전체', '금융', '기술', '인력', '수출', '내수', '창업', '경영', '기타']
+import { PROGRAM_CATEGORIES } from '../../constants/programCategories'
 
 function ProgramFilter({ selected, onSelect, compact = false }) {
   return (
     <div className={compact ? 'chip-group chip-group--compact' : 'chip-group'}>
-      {filters.map((filter) => (
+      {PROGRAM_CATEGORIES.map((filter) => (
         <button
           type="button"
           key={filter}

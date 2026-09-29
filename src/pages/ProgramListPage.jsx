@@ -11,6 +11,7 @@ import Loading from '../components/common/Loading'
 import ProgramCard from '../components/program/ProgramCard'
 import ProgramFilter from '../components/program/ProgramFilter'
 import ProgramSearchBar from '../components/program/ProgramSearchBar'
+import { PROGRAM_CATEGORIES } from '../constants/programCategories'
 import { ROUTES } from '../constants/routes'
 import { getDateTimestamp, getDday } from '../utils/dateUtils'
 import { normalizeProgramPage } from '../utils/programUtils'
@@ -42,6 +43,13 @@ function matchesStatus(program, status) {
   }
 
   return true
+}
+
+function matchesCategory(program, selectedCategory) {
+  if (selectedCategory === '전체') return true
+  if (!PROGRAM_CATEGORIES.includes(selectedCategory)) return false
+
+  return String(program?.category ?? '').trim() === selectedCategory
 }
 
 function closingSortValue(program) {
@@ -78,6 +86,7 @@ function ProgramListPage() {
 
     programApi.getPrograms({
       keyword: submittedQuery || undefined,
+      category: category === DEFAULT_FILTERS.category ? undefined : category,
       page,
       size: PROGRAM_PAGE_SIZE,
       sort: backendSort,
@@ -97,7 +106,7 @@ function ProgramListPage() {
       active = false
       controller.abort()
     }
-  }, [page, requestVersion, sort, submittedQuery])
+  }, [category, page, requestVersion, sort, submittedQuery])
 
   useEffect(() => {
     let active = true
@@ -114,8 +123,7 @@ function ProgramListPage() {
 
   const programs = useMemo(() => {
     const filtered = sourcePrograms.filter((program) => {
-      const matchesCategory = category === '전체' || String(program?.category ?? '').includes(category)
-      return matchesCategory && matchesStatus(program, status)
+      return matchesCategory(program, category) && matchesStatus(program, status)
     })
 
     return [...filtered].sort((first, second) => {
