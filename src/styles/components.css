@@ -51,7 +51,8 @@
 .chip-group { display: flex; flex-wrap: wrap; gap: 10px; }
 .chip-group--compact { gap: 8px; }
 .chip { min-height: 38px; padding: 0 16px; border: 1px solid var(--color-border-strong); border-radius: 999px; color: #506078; background: white; font-size: 0.84rem; font-weight: 700; }
-.chip:hover, .chip--active { color: var(--color-primary); border-color: var(--color-primary); background: var(--color-primary-soft); }
+.chip:hover:not(:disabled), .chip--active { color: var(--color-primary); border-color: var(--color-primary); background: var(--color-primary-soft); }
+.chip:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(26, 35, 53, 0.5); }
 .modal { width: min(540px, 100%); padding: 34px; border-radius: var(--radius-large); background: white; box-shadow: 0 24px 80px rgba(10, 24, 50, 0.25); }

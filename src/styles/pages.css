@@ -217,6 +217,7 @@
 .review-cta__icon { display: grid; place-items: center; flex: 0 0 48px; height: 48px; border-radius: 14px; color: #bcd6ff; background: rgba(255,255,255,0.1); font-weight: 900; }
 .review-cta h2 { margin-bottom: 6px; }
 .review-cta p { color: #bfd0e8; }
+.review-cta__actions { display: flex; flex: 0 0 auto; gap: 10px; }
 .detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 28px; align-items: start; }
 .detail-list { display: grid; gap: 12px; }
 .detail-row { display: grid; grid-template-columns: 130px 1fr; gap: 24px; padding: 24px; }
@@ -267,6 +268,8 @@
 .profile-edit-card { margin-bottom: 18px; padding: 28px; }
 .profile-edit-card h2 { margin-bottom: 22px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); align-items: start; gap: 20px; }
+.business-category-field { display: grid; gap: 10px; margin-top: 22px; }
+.business-category-field > strong { font-size: 0.9rem; }
 .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
 .not-found { display: grid; justify-items: center; gap: 14px; text-align: center; }
 .not-found > span { color: var(--color-primary); font-size: 5rem; font-weight: 900; line-height: 1; }
@@ -329,6 +332,7 @@
   .program-card__details, .program-overview dl { grid-template-columns: 1fr; }
   .detail-heading, .review-cta, .activity-card { align-items: stretch; flex-direction: column; }
   .review-cta { padding: 26px; }
+  .review-cta__actions { flex-direction: column; }
   .mypage-sidebar { position: static; }
   .mypage-sidebar nav { grid-template-columns: 1fr 1fr; }
   .section-heading { align-items: flex-start; flex-direction: column; }

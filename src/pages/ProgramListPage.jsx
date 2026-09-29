@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { businessApi } from '../api/businessApi'
 import { favoriteApi } from '../api/favoriteApi'
 import { programApi } from '../api/programApi'
 import AppLayout from '../components/common/AppLayout'
@@ -13,6 +12,7 @@ import ProgramFilter from '../components/program/ProgramFilter'
 import ProgramSearchBar from '../components/program/ProgramSearchBar'
 import { PROGRAM_CATEGORIES } from '../constants/programCategories'
 import { ROUTES } from '../constants/routes'
+import { useBusinessProfileStatus } from '../hooks/useBusinessProfileStatus'
 import { getDateTimestamp, getDday } from '../utils/dateUtils'
 import { normalizeProgramPage } from '../utils/programUtils'
 
@@ -76,6 +76,11 @@ function ProgramListPage() {
   const [requestVersion, setRequestVersion] = useState(0)
   const [recommendationState, setRecommendationState] = useState('idle')
   const [favoriteIds, setFavoriteIds] = useState(() => new Set())
+  const {
+    profileState,
+    profileComplete,
+    refresh: refreshBusinessProfile,
+  } = useBusinessProfileStatus()
 
   useEffect(() => {
     let active = true
@@ -203,21 +208,11 @@ function ProgramListPage() {
     setRequestVersion((current) => current + 1)
   }
 
-  const runAiRecommendation = async () => {
-    if (recommendationState === 'checking-business') return
+  const runAiRecommendation = () => {
+    if (!profileComplete) return
 
-    setRecommendationState('checking-business')
-    try {
-      await businessApi.getBusinessInfo()
-      // Backend develop에는 추천 API가 아직 없으므로 여기서 가짜 결과를 만들지 않습니다.
-      setRecommendationState('api-unavailable')
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setRecommendationState('missing-business')
-        return
-      }
-      setRecommendationState('error')
-    }
+    // Backend develop에는 추천 API가 아직 없으므로 여기서 가짜 결과를 만들지 않습니다.
+    setRecommendationState('api-unavailable')
   }
 
   const resetRecommendation = () => setRecommendationState('idle')
@@ -238,9 +233,9 @@ function ProgramListPage() {
             <Button
               className="ai-recommendation-button"
               onClick={runAiRecommendation}
-              disabled={recommendationState === 'checking-business'}
+              disabled={!profileComplete}
             >
-              {recommendationState === 'checking-business' ? '사업정보 확인 중...' : '✦ AI 맞춤분석'}
+              {profileState === 'loading' ? '사업정보 확인 중...' : '✦ AI 맞춤분석'}
             </Button>
           </div>
           <label>신청기간<select value={status} onChange={(event) => changeStatus(event.target.value)}><option>전체</option><option>접수중</option><option>마감 임박</option><option>마감</option></select></label>
@@ -248,12 +243,12 @@ function ProgramListPage() {
         </div>
       </section>
 
-      {recommendationState === 'checking-business' && (
+      {profileState === 'loading' && (
         <section className="ai-recommendation-status" role="status">
           <Loading label="등록한 사업정보를 확인하고 있어요." />
         </section>
       )}
-      {recommendationState === 'missing-business' && (
+      {profileState === 'incomplete' && (
         <section className="ai-recommendation-status" role="status">
           <div>
             <strong>AI 맞춤분석을 이용하려면 사업정보가 필요해요.</strong>
@@ -271,13 +266,13 @@ function ProgramListPage() {
           <Button variant="secondary" onClick={resetRecommendation}>전체 공고 보기</Button>
         </section>
       )}
-      {recommendationState === 'error' && (
+      {profileState === 'error' && (
         <section className="ai-recommendation-status ai-recommendation-status--error" role="alert">
           <div>
             <strong>사업정보를 확인하지 못했습니다.</strong>
             <p>잠시 후 다시 시도해주세요. 기존 지원사업 목록은 계속 확인할 수 있어요.</p>
           </div>
-          <Button variant="secondary" onClick={runAiRecommendation}>다시 시도</Button>
+          <Button variant="secondary" onClick={refreshBusinessProfile}>다시 시도</Button>
         </section>
       )}
 
