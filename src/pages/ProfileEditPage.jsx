@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { businessApi } from '../api/businessApi'
+import BusinessCategoryField from '../components/business/BusinessCategoryField'
 import AppLayout from '../components/common/AppLayout'
 import Button from '../components/common/Button'
 import Card from '../components/common/Card'
@@ -14,6 +15,7 @@ function createInitialForm(user, business) {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
+    category: '',
     region: business?.region || '',
     industry: business?.industry || '',
     openingDate: business?.openingDate || '',
@@ -110,6 +112,7 @@ function ProfileEditPage() {
             <Input label="상시근로자 수" type="number" min="0" value={form.employeeCount} onChange={(event) => setField('employeeCount', event.target.value)} disabled={requestState !== 'idle'} />
             <Input label="연 매출" type="number" min="0" value={form.annualRevenue} onChange={(event) => setField('annualRevenue', event.target.value)} disabled={requestState !== 'idle'} />
           </div>
+          <BusinessCategoryField selected={form.category} onSelect={(category) => setField('category', category)} disabled={requestState !== 'idle'} />
         </Card>
 
         {error && <p className="form-error" role="alert">{error}</p>}

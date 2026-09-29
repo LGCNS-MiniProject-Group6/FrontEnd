@@ -9,6 +9,7 @@ import ErrorMessage from '../components/common/ErrorMessage'
 import Loading from '../components/common/Loading'
 import StatusBadge from '../components/common/StatusBadge'
 import { reviewLoadingPath, ROUTES } from '../constants/routes'
+import { useBusinessProfileStatus } from '../hooks/useBusinessProfileStatus'
 import { formatPeriod, getDday } from '../utils/dateUtils'
 import { normalizeProgram } from '../utils/programUtils'
 
@@ -20,6 +21,11 @@ function ProgramDetailPage() {
   const [favorite, setFavorite] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [requestVersion, setRequestVersion] = useState(0)
+  const {
+    profileState,
+    profileComplete,
+    refresh: refreshBusinessProfile,
+  } = useBusinessProfileStatus()
 
   useEffect(() => {
     let active = true
@@ -45,7 +51,10 @@ function ProgramDetailPage() {
     }
   }, [pblancId, requestVersion])
 
-  const moveToReview = () => navigate(reviewLoadingPath(pblancId))
+  const moveToReview = () => {
+    if (!profileComplete) return
+    navigate(reviewLoadingPath(pblancId))
+  }
 
   const toggleFavorite = async () => {
     if (favoriteLoading) return
@@ -130,10 +139,23 @@ function ProgramDetailPage() {
           <span className="review-cta__icon" aria-hidden="true">AI</span>
           <div>
             <h2>AI로 신청 조건을 먼저 확인해보세요</h2>
-            <p>검수 Backend가 준비되기 전까지 Demo 화면에서 서비스 흐름을 확인할 수 있습니다.</p>
+            <p>
+              {profileState === 'loading' && '등록한 사업정보를 확인하고 있습니다.'}
+              {profileState === 'incomplete' && 'AI 분석을 이용하려면 먼저 내 정보를 입력해주세요.'}
+              {profileState === 'error' && '사업정보를 확인하지 못해 AI 분석을 실행할 수 없습니다.'}
+              {profileState === 'complete' && '검수 Backend가 준비되기 전까지 Demo 화면에서 서비스 흐름을 확인할 수 있습니다.'}
+            </p>
           </div>
         </div>
-        <Button size="large" onClick={moveToReview}>AI 지원 적합성 검수하기</Button>
+        <span className="review-cta__actions">
+          {profileState === 'incomplete' && (
+            <Link className="button button--light button--large" to={ROUTES.PROFILE_EDIT}>내 정보 입력하기</Link>
+          )}
+          {profileState === 'error' && (
+            <Button variant="light" size="large" onClick={refreshBusinessProfile}>다시 확인</Button>
+          )}
+          <Button size="large" onClick={moveToReview} disabled={!profileComplete}>AI 지원 적합성 검수하기</Button>
+        </span>
       </section>
 
       <div className="detail-layout">

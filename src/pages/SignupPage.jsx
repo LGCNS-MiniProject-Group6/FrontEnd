@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authApi } from '../api/authApi'
 import supportUpLogo from '../assets/support-up-logo.png'
+import BusinessCategoryField from '../components/business/BusinessCategoryField'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import SignupStepCard from '../components/signup/SignupStepCard'
@@ -22,6 +23,7 @@ const initialForm = {
   passwordConfirm: '',
   name: '',
   phone: '',
+  category: '',
   region: '',
   industry: '',
   openingDate: '',
@@ -294,7 +296,7 @@ function SignupPage() {
     // [수정] 휴대폰 번호 단계에 인증번호 입력란 추가
     if (step === 3) return renderPhoneVerification()
     if (step === 5) return <Input label="주요 사업장 소재지" value={form.region} onChange={(e) => setField('region', e.target.value)} placeholder="서울특별시 강남구" autoFocus />
-    if (step === 6) return <><Input label="주업종 또는 분류 코드" value={form.industry} onChange={(e) => setField('industry', e.target.value)} placeholder="온라인 소매업" autoFocus /><div className="signup-suggestions"><span>주요 추천 분야</span>{['제조업', '정보통신업', '도소매업', '전문 서비스업'].map((item) => <button type="button" key={item} onClick={() => setField('industry', item)}>{item}</button>)}</div></>
+    if (step === 6) return <><Input label="주업종 또는 분류 코드" value={form.industry} onChange={(e) => setField('industry', e.target.value)} placeholder="온라인 소매업" autoFocus /><div className="signup-suggestions"><span>주요 추천 분야</span>{['제조업', '정보통신업', '도소매업', '전문 서비스업'].map((item) => <button type="button" key={item} onClick={() => setField('industry', item)}>{item}</button>)}</div><BusinessCategoryField selected={form.category} onSelect={(category) => setField('category', category)} disabled={requestState !== 'idle'} /></>
     if (step === 7) return <Input label="개업연월일" type="date" value={form.openingDate} onChange={(e) => setField('openingDate', e.target.value)} autoFocus />
     if (step === 8) return <div className="number-stepper"><Button variant="secondary" onClick={() => setField('employeeCount', Math.max(0, Number(form.employeeCount) - 1))}>−</Button><strong>{form.employeeCount}<small>명</small></strong><Button variant="secondary" onClick={() => setField('employeeCount', Number(form.employeeCount) + 1)}>＋</Button></div>
     if (step === 9) return <Input label="연 평균 매출액" type="number" min="0" value={form.annualRevenue} onChange={(e) => setField('annualRevenue', e.target.value)} helperText={form.annualRevenue ? `${formatCurrency(form.annualRevenue)}원` : '숫자로 입력해주세요.'} placeholder="120000000" autoFocus />
@@ -322,7 +324,7 @@ function SignupPage() {
   if (step === 10) {
     const summary = [
       ['이메일', form.email], ['이름', form.name], ['휴대폰', form.phone],
-      ['사업장', form.region], ['업종', form.industry], ['개업일', form.openingDate],
+      ['사업장', form.region], ['업종', form.industry], ['관심 카테고리', form.category || '미선택'], ['개업일', form.openingDate],
       ['상시근로자', `${form.employeeCount}명`],
       ['연 매출', `${formatCurrency(form.annualRevenue)}원`],
     ]
